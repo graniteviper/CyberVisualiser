@@ -329,6 +329,13 @@ class LgService extends ChangeNotifier {
     );
   }
 
+  // -------- saveConnectionSettings() method --------
+  // Saves the connection settings from the model to local preferences
+  Future<void> saveConnectionSettings() async {
+    await _lgConnectionModel.saveToPreferences();
+    notifyListeners();
+  }
+
   // -------- initializeConnection() method --------
   // Used to load the saved connection settings and initiate the connection to the Liquid Galaxy via SSH
   Future<void> initializeConnection() async {
@@ -494,6 +501,14 @@ class LgService extends ChangeNotifier {
     // Notifies any widgets or services listening to this class that a change took place
     // Specifically, that the connection status changed
     // It does it through ChangeNotifier
+  }
+
+  @override
+  void dispose() {
+    _orbitTimer?.cancel();
+    _connectionTimer?.cancel();
+    _client?.close();
+    super.dispose();
   }
 
   // -------- execute() method --------
@@ -2070,5 +2085,153 @@ class LgService extends ChangeNotifier {
       </LookAt>
     ''';
     await flyTo(lookAt);
+  }
+
+  // -------- sendCyberAttackKML() method --------
+  // Generates and uploads a KML that represents a cyber attack line from source to destination
+  Future<void> sendCyberAttackKML({
+    required String attackName,
+    required String sourceCountry,
+    required double sourceLat,
+    required double sourceLon,
+    required String targetCountry,
+    required double targetLat,
+    required double targetLon,
+    required String severity,
+  }) async {
+    if (_client == null) {
+      debugPrint('SSH client not connected');
+      return;
+    }
+
+    try {
+      final colorHex = severity.toLowerCase() == 'critical'
+          ? 'ff0000ff' // Red (AABBGGRR)
+          : severity.toLowerCase() == 'high'
+              ? 'ff00a5ff' // Orange
+              : severity.toLowerCase() == 'medium'
+                  ? 'ff00ffff' // Yellow
+                  : 'ff00ff00'; // Green
+
+      final kmlContent = '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+  <Document>
+    <name>Cyber Attack: $attackName</name>
+    <Style id="sourcePoint">
+      <IconStyle>
+        <scale>1.5</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/red-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    <Style id="targetPoint">
+      <IconStyle>
+        <scale>1.5</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/orange-square.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    <Style id="attackLine">
+      <LineStyle>
+        <color>$colorHex</color>
+        <width>5</width>
+      </LineStyle>
+    </Style>
+    <Placemark>
+      <name>Source: $sourceCountry</name>
+      <styleUrl>#sourcePoint</styleUrl>
+      <Point>
+        <coordinates>$sourceLon,$sourceLat,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Target: $targetCountry ($attackName)</name>
+      <styleUrl>#targetPoint</styleUrl>
+      <Point>
+        <coordinates>$targetLon,$targetLat,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Attack Vector</name>
+      <styleUrl>#attackLine</styleUrl>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          $sourceLon,$sourceLat,0
+          $targetLon,$targetLat,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>''';
+
+      await uploadKml(kmlContent, 'cyber_attack.kml');
+
+      // Midpoint calculations
+      final midLat = (sourceLat + targetLat) / 2;
+      final midLon = (sourceLon + targetLon) / 2;
+
+      final lookAt = '''
+        <LookAt>
+          <longitude>$midLon</longitude>
+          <latitude>$midLat</latitude>
+          <altitude>0</altitude>
+          <heading>0</heading>
+          <tilt>45</tilt>
+          <range>6000000</range>
+          <gx:altitudeMode>relativeToGround</gx:altitudeMode>
+        </LookAt>
+      ''';
+      await flyTo(lookAt);
+    } catch (e) {
+      debugPrint('Error sending cyber attack KML: $e');
+    }
+  }
+
+  // -------- sendCyberAttackOverlayKML() method --------
+  // Sends a ScreenOverlay showing the cyber attack details card to the leftmost screen
+  Future<void> sendCyberAttackOverlayKML({
+    required String attackName,
+    required String sourceCountry,
+    required String targetCountry,
+    required String severity,
+    required String ipAddress,
+  }) async {
+    if (_client == null) return;
+
+    try {
+      int leftMost = calculateLeftMostScreen(_lgConnectionModel.screens);
+      final badgeColor = severity.toLowerCase() == 'critical'
+          ? '#ff0055'
+          : severity.toLowerCase() == 'high'
+              ? '#ff9900'
+              : '#ffff00';
+
+      // We generate a description with HTML formatted text inside the ScreenOverlay balloon, or we can use standard overlay
+      final kml = '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Attack Telemetry</name>
+    <ScreenOverlay>
+      <name>Telemetry Overlay</name>
+      <Icon>
+        <href>https://img.icons8.com/nolan/256/security-shield.png</href>
+      </Icon>
+      <overlayXY x="0" y="1" xunits="fraction" yunits="fraction"/>
+      <screenXY x="0.02" y="0.95" xunits="fraction" yunits="fraction"/>
+      <size x="150" y="150" xunits="pixels" yunits="pixels"/>
+    </ScreenOverlay>
+  </Document>
+</kml>''';
+
+      final uploadedName = await uploadKml(kml, 'attack_overlay.kml');
+      if (uploadedName != null) {
+        await query('slave_$leftMost=https://lg1:81/$uploadedName');
+      }
+    } catch (e) {
+      debugPrint('Error sending cyber attack overlay: $e');
+    }
   }
 }

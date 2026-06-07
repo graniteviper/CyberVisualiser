@@ -17,7 +17,6 @@ dependencies:
   shared_preferences: ^2.5.4
   path_provider: ^2.1.5
   dartssh2: ^2.13.0
-  google_maps_flutter: ^2.6.0
   http: ^1.2.0
 
 dev_dependencies:
