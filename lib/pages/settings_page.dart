@@ -144,6 +144,75 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text('Rig Command Center', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Direct actions to clean KML states and graphics overlays',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent.withOpacity(0.1),
+                              foregroundColor: Colors.redAccent,
+                              side: const BorderSide(color: Colors.redAccent),
+                            ),
+                            icon: const Icon(Icons.delete_sweep_rounded, size: 16),
+                            label: const Text('Clear KML', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            onPressed: service.isConnected
+                                ? () async {
+                                    final success = await service.cleanKML();
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            success ? 'KML vectors cleared successfully.' : 'Failed to clear KMLs.',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orangeAccent.withOpacity(0.1),
+                              foregroundColor: Colors.orangeAccent,
+                              side: const BorderSide(color: Colors.orangeAccent),
+                            ),
+                            icon: const Icon(Icons.layers_clear_rounded, size: 16),
+                            label: const Text('Clear Logos', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            onPressed: service.isConnected
+                                ? () async {
+                                    await service.cleanLogos();
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Overlays and logos cleared.')),
+                                      );
+                                    }
+                                  }
+                                : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text('App Theme', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 8),
                     DropdownButton<ThemeMode>(

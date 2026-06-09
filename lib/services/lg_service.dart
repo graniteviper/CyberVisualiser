@@ -1,10 +1,10 @@
 // -------------------------------------------- LG SERVICE --------------------------------------------
 // File dedicated to manage everything that has to do with the connection to the Liquid Galaxy
 
-// ---------------------- Import packages ----------------------
 import 'dart:async'; // Imports the Dart asynchronous tools
 import 'dart:io'; // Used for handling socket exceptions and network errors
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // Imports the foundation librray used to manage ChangeNotification
 import 'package:dartssh2/dartssh2.dart'; // SSH package used to connect to and send commands to the Liquid Galaxy
@@ -193,15 +193,33 @@ class LgConnectionModel {
   }
 }
 
+class ActiveAttack {
+  final String attackName;
+  final String sourceCountry;
+  final double sourceLat;
+  final double sourceLon;
+  final String targetCountry;
+  final double targetLat;
+  final double targetLon;
+  final String severity;
 
-// ---------------------- LgService class ----------------------
-// Service to establish and manage the connection to LG
+  ActiveAttack({
+    required this.attackName,
+    required this.sourceCountry,
+    required this.sourceLat,
+    required this.sourceLon,
+    required this.targetCountry,
+    required this.targetLat,
+    required this.targetLon,
+    required this.severity,
+  });
+}
+
 class LgService extends ChangeNotifier {
-  // The class LgService extends ChangeNotifierProvider because it allows widgets to listen for changes
-  // Makes sure there is only one instance of LgService across the whole app (which is called singleton pattern)
-  // Useful to manage a SINGLE connection or state across different parts of the app
-
   LgService._internal();
+
+
+
   // Private constructor (_), only accessible from within the class
   // Prevents creating multiple instances from outside the class
 
@@ -211,12 +229,13 @@ class LgService extends ChangeNotifier {
   // 'final' means it cannot be reassigned after being initialized
 
   factory LgService() => _singleton;
+
+  final LgConnectionModel _lgConnectionModel = LgConnectionModel();
+  final List<ActiveAttack> _activeAttacks = [];
   // Instead of creating a new object, it returns the existing _instance that was created earlier
   // This enforces the Singleton behavior by always returning the same object
 
-  final LgConnectionModel _lgConnectionModel = LgConnectionModel();
-  // Creates a private instance of LgConnectionModel (which holds LG connection settings) under the name "_lgConnectionModel"
-  // 'final' means it cannot be reassigned after being initialized
+
 
   // -------- SSH client and connection details --------
   SSHClient? _client;
@@ -461,13 +480,21 @@ class LgService extends ChangeNotifier {
 
       return true;
       // Returning true indicates that the connection was successful
-    } on TimeoutException {
+    } on TimeoutException catch (e) {
       // If a TimeoutException takes place
+      debugPrint('LG Connection TimeoutException: Connection to ${_lgConnectionModel.ip}:${_lgConnectionModel.port} timed out: $e');
 
       _currentConnectionAttempts++;
       // The current number of connection attempts increases by 1
-    } on SocketException {
+    } on SocketException catch (e) {
       // If a SocketException takes place
+      debugPrint('LG Connection SocketException: Socket error connecting to ${_lgConnectionModel.ip}:${_lgConnectionModel.port}: $e');
+
+      _currentConnectionAttempts++;
+      // The current number of connection attempts increases by 1
+    } catch (e) {
+      // Catch any other exceptions (e.g. handshake or authentication errors)
+      debugPrint('LG Connection Exception: Unexpected error connecting to ${_lgConnectionModel.ip}:${_lgConnectionModel.port}: $e');
 
       _currentConnectionAttempts++;
       // The current number of connection attempts increases by 1
@@ -800,7 +827,8 @@ class LgService extends ChangeNotifier {
     // It also takes a parameter called 'kmlViewTag'
     // This parameter is expected to be a <LookAt> or <Camera> tag, which defines a camera movement or a view to fly to
 
-    await query('flytoview=$kmlViewTag');
+    final cleanTag = kmlViewTag.split('\n').map((line) => line.trim()).join('');
+    await query('flytoview=$cleanTag');
     // Executes the query() method
     // In this case, the value of the 'content' parameter is 'flytoview=$kmlViewTag'
     // flytoview= is a command recognized by Liquid Galaxy to trigger a camera movement to a specified location
@@ -930,6 +958,8 @@ class LgService extends ChangeNotifier {
   // -------- cleanKML() method --------
   // Used to clear KML related data from the Liquid Galaxy rig and refresh the display
   Future<bool> cleanKML() async {
+    _activeAttacks.clear();
+    await query('slave_1=');
     // Defines an asynchronous method that returns a boolean value
     // 'async' allows to use 'await' inside the function
 
@@ -2087,6 +2117,62 @@ class LgService extends ChangeNotifier {
     await flyTo(lookAt);
   }
 
+  // Helper to calculate bearing in degrees between two points
+  double _calculateBearing(double lat1, double lon1, double lat2, double lon2) {
+    final lat1Rad = lat1 * math.pi / 180;
+    final lat2Rad = lat2 * math.pi / 180;
+    final dLon = (lon2 - lon1) * math.pi / 180;
+
+    final y = math.sin(dLon) * math.cos(lat2Rad);
+    final x = math.cos(lat1Rad) * math.sin(lat2Rad) -
+        math.sin(lat1Rad) * math.cos(lat2Rad) * math.cos(dLon);
+
+    final brng = math.atan2(y, x) * 180 / math.pi;
+    return (brng + 360) % 360;
+  }
+
+  // Helper to calculate distance in meters using Haversine formula
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const r = 6371000; // Earth's radius in meters
+    final dLat = (lat2 - lat1) * math.pi / 180;
+    final dLon = (lon2 - lon1) * math.pi / 180;
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return r * c;
+  }
+
+  // Helper to generate 3D curved parabolic coordinate string
+  String _generateParabolicCoordinates(double sLat, double sLon, double tLat, double tLon) {
+    final List<String> coords = [];
+    final steps = 40;
+    final distance = _calculateDistance(sLat, sLon, tLat, tLon);
+    final double maxHeight = math.min(distance * 0.15, 1500000); // 15% of distance, capped at 1,500km
+
+    for (int i = 0; i <= steps; i++) {
+      final t = i / steps;
+      final lat = sLat + (tLat - sLat) * t;
+
+      double diffLon = tLon - sLon;
+      if (diffLon > 180) {
+        diffLon -= 360;
+      } else if (diffLon < -180) {
+        diffLon += 360;
+      }
+      double lon = sLon + diffLon * t;
+      if (lon > 180) {
+        lon -= 360;
+      } else if (lon < -180) {
+        lon += 360;
+      }
+
+      final alt = maxHeight * 4 * t * (1 - t);
+      coords.add('$lon,$lat,$alt');
+    }
+    return coords.join('\n          ');
+  }
+
   // -------- sendCyberAttackKML() method --------
   // Generates and uploads a KML that represents a cyber attack line from source to destination
   Future<void> sendCyberAttackKML({
@@ -2105,19 +2191,88 @@ class LgService extends ChangeNotifier {
     }
 
     try {
-      final colorHex = severity.toLowerCase() == 'critical'
-          ? 'ff0000ff' // Red (AABBGGRR)
-          : severity.toLowerCase() == 'high'
-              ? 'ff00a5ff' // Orange
-              : severity.toLowerCase() == 'medium'
-                  ? 'ff00ffff' // Yellow
-                  : 'ff00ff00'; // Green
+      // Add the current attack to active attacks list
+      _activeAttacks.add(ActiveAttack(
+        attackName: attackName,
+        sourceCountry: sourceCountry,
+        sourceLat: sourceLat,
+        sourceLon: sourceLon,
+        targetCountry: targetCountry,
+        targetLat: targetLat,
+        targetLon: targetLon,
+        severity: severity,
+      ));
+
+      // Limit to 15 active attacks to keep screens clean
+      if (_activeAttacks.length > 15) {
+        _activeAttacks.removeAt(0);
+      }
+
+      final StringBuffer placemarksBuffer = StringBuffer();
+
+      for (int index = 0; index < _activeAttacks.length; index++) {
+        final attack = _activeAttacks[index];
+        final id = index + 1;
+        
+        final severityLower = attack.severity.toLowerCase();
+        final stylePrefix = severityLower == 'critical'
+            ? 'critical'
+            : severityLower == 'high'
+                ? 'high'
+                : severityLower == 'medium'
+                    ? 'medium'
+                    : 'low';
+
+        // 1. Source Point Placemark
+        placemarksBuffer.write('''
+    <Placemark>
+      <name>[$id] Source: ${attack.sourceCountry}</name>
+      <styleUrl>#${stylePrefix}Point</styleUrl>
+      <Point>
+        <coordinates>${attack.sourceLon},${attack.sourceLat},0</coordinates>
+      </Point>
+    </Placemark>''');
+
+        // 2. Target Point Placemark
+        placemarksBuffer.write('''
+    <Placemark>
+      <name>[$id] Target: ${attack.targetCountry} (${attack.attackName})</name>
+      <styleUrl>#targetPoint</styleUrl>
+      <Point>
+        <coordinates>${attack.targetLon},${attack.targetLat},0</coordinates>
+      </Point>
+    </Placemark>''');
+
+        // 3. 3D Curved Parabolic Line Placemark
+        final coordinatesStr = _generateParabolicCoordinates(
+          attack.sourceLat,
+          attack.sourceLon,
+          attack.targetLat,
+          attack.targetLon,
+        );
+
+        placemarksBuffer.write('''
+    <Placemark>
+      <name>[$id] Attack Vector (${attack.attackName})</name>
+      <styleUrl>#${stylePrefix}Line</styleUrl>
+      <LineString>
+        <tessellate>0</tessellate>
+        <extrude>0</extrude>
+        <altitudeMode>relativeToGround</altitudeMode>
+        <coordinates>
+          $coordinatesStr
+        </coordinates>
+      </LineString>
+    </Placemark>''');
+      }
 
       final kmlContent = '''<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
   <Document>
-    <name>Cyber Attack: $attackName</name>
-    <Style id="sourcePoint">
+    <name>Active Cyber Attacks</name>
+    
+    <!-- Point styles -->
+    <Style id="criticalPoint">
       <IconStyle>
         <scale>1.5</scale>
         <Icon>
@@ -2125,6 +2280,32 @@ class LgService extends ChangeNotifier {
         </Icon>
       </IconStyle>
     </Style>
+    <Style id="highPoint">
+      <IconStyle>
+        <scale>1.5</scale>
+
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/orange-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    <Style id="mediumPoint">
+      <IconStyle>
+        <scale>1.5</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/yellow-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    <Style id="lowPoint">
+      <IconStyle>
+        <scale>1.5</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/paddle/grn-circle.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+
     <Style id="targetPoint">
       <IconStyle>
         <scale>1.5</scale>
@@ -2133,57 +2314,54 @@ class LgService extends ChangeNotifier {
         </Icon>
       </IconStyle>
     </Style>
-    <Style id="attackLine">
+
+    <!-- Line styles -->
+    <Style id="criticalLine">
       <LineStyle>
-        <color>$colorHex</color>
+        <color>ff0000ff</color> <!-- Red (AABBGGRR) -->
         <width>5</width>
       </LineStyle>
     </Style>
-    <Placemark>
-      <name>Source: $sourceCountry</name>
-      <styleUrl>#sourcePoint</styleUrl>
-      <Point>
-        <coordinates>$sourceLon,$sourceLat,0</coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>Target: $targetCountry ($attackName)</name>
-      <styleUrl>#targetPoint</styleUrl>
-      <Point>
-        <coordinates>$targetLon,$targetLat,0</coordinates>
-      </Point>
-    </Placemark>
-    <Placemark>
-      <name>Attack Vector</name>
-      <styleUrl>#attackLine</styleUrl>
-      <LineString>
-        <tessellate>1</tessellate>
-        <coordinates>
-          $sourceLon,$sourceLat,0
-          $targetLon,$targetLat,0
-        </coordinates>
-      </LineString>
-    </Placemark>
+    <Style id="highLine">
+      <LineStyle>
+        <color>ff00a5ff</color> <!-- Orange -->
+        <width>5</width>
+      </LineStyle>
+    </Style>
+    <Style id="mediumLine">
+      <LineStyle>
+        <color>ff00ffff</color> <!-- Yellow -->
+        <width>5</width>
+      </LineStyle>
+    </Style>
+    <Style id="lowLine">
+      <LineStyle>
+        <color>ff00ff00</color> <!-- Green -->
+        <width>5</width>
+      </LineStyle>
+    </Style>
+
+    ${placemarksBuffer.toString()}
   </Document>
 </kml>''';
 
-      await uploadKml(kmlContent, 'cyber_attack.kml');
+      final uploadedName = await uploadKml(kmlContent, 'cyber_attack.kml');
+      if (uploadedName != null) {
+        await query('slave_1=http://lg1:81/$uploadedName');
+      }
 
-      // Midpoint calculations
-      final midLat = (sourceLat + targetLat) / 2;
-      final midLon = (sourceLon + targetLon) / 2;
+      // Calculate bearing from target looking back to source
+      final heading = _calculateBearing(targetLat, targetLon, sourceLat, sourceLon);
 
-      final lookAt = '''
-        <LookAt>
-          <longitude>$midLon</longitude>
-          <latitude>$midLat</latitude>
+      final lookAt = '''<LookAt>
+          <longitude>$targetLon</longitude>
+          <latitude>$targetLat</latitude>
           <altitude>0</altitude>
-          <heading>0</heading>
+          <heading>$heading</heading>
           <tilt>45</tilt>
           <range>6000000</range>
           <gx:altitudeMode>relativeToGround</gx:altitudeMode>
-        </LookAt>
-      ''';
+        </LookAt>''';
       await flyTo(lookAt);
     } catch (e) {
       debugPrint('Error sending cyber attack KML: $e');
