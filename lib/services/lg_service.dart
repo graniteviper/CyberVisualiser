@@ -2223,10 +2223,43 @@ class LgService extends ChangeNotifier {
                     ? 'medium'
                     : 'low';
 
+        final severityColor = severityLower == 'critical'
+            ? '#ff4a5a'
+            : severityLower == 'high'
+                ? '#ff9f43'
+                : severityLower == 'medium'
+                    ? '#feca57'
+                    : '#1dd1a1';
+
+        final description = '''<description><![CDATA[
+        <div style="font-family: 'Outfit', 'Segoe UI', Roboto, sans-serif; min-width: 280px; padding: 16px; background-color: #0f111a; color: #ffffff; border-radius: 12px; border: 1px solid #1e293b;">
+          <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 16px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; letter-spacing: 0.5px;">ATTACK TELEMETRY DETAIL</h3>
+          <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid #1e293b;">
+              <td style="padding: 8px 0; font-weight: 600; color: #94a3b8; width: 90px;">Vector:</td>
+              <td style="padding: 8px 0; color: #f1f5f9; font-weight: 500;">${attack.attackName}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1e293b;">
+              <td style="padding: 8px 0; font-weight: 600; color: #94a3b8;">Severity:</td>
+              <td style="padding: 8px 0; font-weight: 700; color: $severityColor;">${attack.severity.toUpperCase()}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1e293b;">
+              <td style="padding: 8px 0; font-weight: 600; color: #94a3b8;">Origin:</td>
+              <td style="padding: 8px 0; color: #f1f5f9;">${attack.sourceCountry}<br/><span style="font-size: 11px; color: #64748b;">(${attack.sourceLat.toStringAsFixed(4)}, ${attack.sourceLon.toStringAsFixed(4)})</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: 600; color: #94a3b8;">Target:</td>
+              <td style="padding: 8px 0; color: #f1f5f9;">${attack.targetCountry}<br/><span style="font-size: 11px; color: #64748b;">(${attack.targetLat.toStringAsFixed(4)}, ${attack.targetLon.toStringAsFixed(4)})</span></td>
+            </tr>
+          </table>
+        </div>
+      ]]></description>''';
+
         // 1. Source Point Placemark
         placemarksBuffer.write('''
     <Placemark>
       <name>[$id] Source: ${attack.sourceCountry}</name>
+      $description
       <styleUrl>#${stylePrefix}Point</styleUrl>
       <Point>
         <coordinates>${attack.sourceLon},${attack.sourceLat},0</coordinates>
@@ -2237,6 +2270,7 @@ class LgService extends ChangeNotifier {
         placemarksBuffer.write('''
     <Placemark>
       <name>[$id] Target: ${attack.targetCountry} (${attack.attackName})</name>
+      $description
       <styleUrl>#targetPoint</styleUrl>
       <Point>
         <coordinates>${attack.targetLon},${attack.targetLat},0</coordinates>
@@ -2254,6 +2288,7 @@ class LgService extends ChangeNotifier {
         placemarksBuffer.write('''
     <Placemark>
       <name>[$id] Attack Vector (${attack.attackName})</name>
+      $description
       <styleUrl>#${stylePrefix}Line</styleUrl>
       <LineString>
         <tessellate>0</tessellate>
