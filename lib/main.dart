@@ -3,12 +3,17 @@ import 'package:provider/provider.dart';
 import 'services/lg_service.dart';
 import 'services/lg_adapter.dart';
 import 'services/honeylabs_service.dart';
+import 'services/abuseipdb_service.dart';
+import 'services/track_ip_lg_service.dart';
 import 'repositories/attack_repository.dart';
+import 'repositories/track_ip_repository.dart';
 import 'providers/attack_provider.dart';
+import 'providers/track_ip_provider.dart';
 import 'theme/theme_notifier.dart';
 import 'theme/app_theme.dart';
 import 'screens/dashboard_screen.dart';
 import 'pages/settings_page.dart';
+import 'pages/track_ip_page.dart';
 import 'utils/config.dart';
 
 void main() async {
@@ -20,6 +25,9 @@ void main() async {
   final apiService = HoneyLabsService();
   final repository = AttackRepository(apiService);
 
+  final abuseDbService = AbuseIpDbService();
+  final trackRepository = TrackIpRepository(abuseDbService);
+
   runApp(
     MultiProvider(
       providers: [
@@ -28,8 +36,14 @@ void main() async {
         ProxyProvider<LgService, LgAdapter>(
           update: (_, lgService, __) => LgAdapter(lgService),
         ),
+        ProxyProvider<LgService, TrackIpLgService>(
+          update: (_, lgService, __) => TrackIpLgService(lgService),
+        ),
         ChangeNotifierProvider<AttackProvider>(
           create: (_) => AttackProvider(repository),
+        ),
+        ChangeNotifierProvider<TrackIpProvider>(
+          create: (_) => TrackIpProvider(trackRepository),
         ),
       ],
       child: const MainApp(),
@@ -69,6 +83,7 @@ class _AppShellState extends State<AppShell> {
   final List<Widget> _pages = const [
     DashboardScreen(),
     SettingsPage(),
+    TrackIpPage(),
   ];
 
   @override
@@ -105,6 +120,10 @@ class _AppShellState extends State<AppShell> {
           NavigationDestination(
             icon: Icon(Icons.settings_rounded),
             label: 'Connection Settings',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.location_on_rounded),
+            label: 'Track IP',
           ),
         ],
       ),

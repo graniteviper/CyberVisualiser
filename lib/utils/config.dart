@@ -5,6 +5,7 @@ class AppConfig {
   static const Duration pollInterval = Duration(minutes: 1);
 
   static String apiKey = '';
+  static String abuseIpDbApiKey = '';
 
   /// Loads configuration values from the .env asset file
   static Future<void> loadConfig() async {
@@ -17,7 +18,11 @@ class AppConfig {
           final parts = trimmed.split('=');
           if (parts.length >= 2) {
             apiKey = parts.sublist(1).join('=').trim();
-            break;
+          }
+        } else if (trimmed.startsWith('ABUSEIPDB_API_KEY')) {
+          final parts = trimmed.split('=');
+          if (parts.length >= 2) {
+            abuseIpDbApiKey = parts.sublist(1).join('=').trim();
           }
         }
       }
