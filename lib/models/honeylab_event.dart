@@ -47,14 +47,20 @@ class HoneyLabEvent {
       timestamp: parsedTime,
       eventId: json['event_id'] ?? '',
       sourceIp: json['source_ip'] ?? '',
-      sourcePort: json['source_port'] is int ? json['source_port'] : int.tryParse(json['source_port']?.toString() ?? '') ?? 0,
+      sourcePort: json['source_port'] is int
+          ? json['source_port']
+          : int.tryParse(json['source_port']?.toString() ?? '') ?? 0,
       sourceDomain: json['source_domain'] ?? '',
       countryCode: json['country_code'] ?? '',
       countryName: json['country_name'] ?? '',
       cityName: json['city_name'] ?? '',
-      asnNumber: json['asn_number'] is int ? json['asn_number'] : int.tryParse(json['asn_number']?.toString() ?? '') ?? 0,
+      asnNumber: json['asn_number'] is int
+          ? json['asn_number']
+          : int.tryParse(json['asn_number']?.toString() ?? '') ?? 0,
       asnOrg: json['asn_org'] ?? '',
-      destPort: json['dest_port'] is int ? json['dest_port'] : int.tryParse(json['dest_port']?.toString() ?? '') ?? 0,
+      destPort: json['dest_port'] is int
+          ? json['dest_port']
+          : int.tryParse(json['dest_port']?.toString() ?? '') ?? 0,
       networkProtocol: json['network_protocol'] ?? '',
       httpMethod: json['http_method'] ?? '',
       userAgent: json['user_agent'] ?? '',

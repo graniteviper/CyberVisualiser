@@ -23,8 +23,8 @@ class EventDetailsPanel extends StatelessWidget {
     final sevColor = event.severity == 'Critical'
         ? Colors.redAccent
         : event.severity == 'High'
-            ? Colors.orangeAccent
-            : Colors.yellowAccent;
+        ? Colors.orangeAccent
+        : Colors.yellowAccent;
 
     return Dialog(
       backgroundColor: isDark ? const Color(0xFF0F111A) : Colors.white,
@@ -55,7 +55,9 @@ class EventDetailsPanel extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.0,
-                        color: isDark ? Colors.blue.shade200 : Colors.indigo.shade900,
+                        color: isDark
+                            ? Colors.blue.shade200
+                            : Colors.indigo.shade900,
                       ),
                     ),
                   ],
@@ -76,31 +78,64 @@ class EventDetailsPanel extends StatelessWidget {
                   children: [
                     _buildSectionHeader('EVENT METRIC'),
                     _buildInfoRow('Event ID', event.eventId, isMonospace: true),
-                    _buildInfoRow('Timestamp (UTC)', event.timestamp.toIso8601String()),
-                    _buildInfoRow('Severity', event.severity, valueColor: sevColor, isBold: true),
+                    _buildInfoRow(
+                      'Timestamp (UTC)',
+                      event.timestamp.toIso8601String(),
+                    ),
+                    _buildInfoRow(
+                      'Severity',
+                      event.severity,
+                      valueColor: sevColor,
+                      isBold: true,
+                    ),
 
                     _buildSectionHeader('SOURCE INFO'),
-                    _buildInfoRow('Source IP', event.sourceIp, isMonospace: true),
+                    _buildInfoRow(
+                      'Source IP',
+                      event.sourceIp,
+                      isMonospace: true,
+                    ),
                     _buildInfoRow('Source Port', event.sourcePort.toString()),
                     if (event.sourceDomain.isNotEmpty)
                       _buildInfoRow('Source Domain', event.sourceDomain),
-                    _buildInfoRow('Country', '${event.countryName} (${event.countryCode})'),
+                    _buildInfoRow(
+                      'Country',
+                      '${event.countryName} (${event.countryCode})',
+                    ),
                     if (event.cityName.isNotEmpty)
                       _buildInfoRow('City Name', event.cityName),
-                    _buildInfoRow('ASN Profile', 'AS${event.asnNumber} (${event.asnOrg})'),
+                    _buildInfoRow(
+                      'ASN Profile',
+                      'AS${event.asnNumber} (${event.asnOrg})',
+                    ),
 
                     _buildSectionHeader('TARGET INFO'),
-                    _buildInfoRow('Target Port', event.destPort.toString(), isBold: true),
+                    _buildInfoRow(
+                      'Target Port',
+                      event.destPort.toString(),
+                      isBold: true,
+                    ),
                     if (event.networkProtocol.isNotEmpty)
-                      _buildInfoRow('Protocol', event.networkProtocol.toUpperCase()),
+                      _buildInfoRow(
+                        'Protocol',
+                        event.networkProtocol.toUpperCase(),
+                      ),
                     if (event.httpMethod.isNotEmpty)
                       _buildInfoRow('HTTP Method', event.httpMethod),
                     if (event.urlPath.isNotEmpty)
-                      _buildInfoRow('Request Path', event.urlPath, isMonospace: true),
+                      _buildInfoRow(
+                        'Request Path',
+                        event.urlPath,
+                        isMonospace: true,
+                      ),
                     if (event.userAgent.isNotEmpty)
                       _buildInfoRow('User Agent', event.userAgent),
                     if (event.communityId.isNotEmpty)
-                      _buildInfoRow('Corelight Flow Hash', event.communityId, isMonospace: true),
+                      _buildInfoRow(
+                        'Corelight Flow Hash',
+                        event.communityId,
+                        isMonospace: true,
+                      ),
                   ],
                 ),
               ),
@@ -123,7 +158,9 @@ class EventDetailsPanel extends StatelessWidget {
                     label: const Text('VISUALIZE ON LG'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isLgConnected ? sevColor : Colors.grey,
-                      foregroundColor: isLgConnected ? Colors.black : Colors.white,
+                      foregroundColor: isLgConnected
+                          ? Colors.black
+                          : Colors.white,
                       elevation: 2,
                     ),
                     onPressed: isLgConnected
@@ -157,7 +194,13 @@ class EventDetailsPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? valueColor, bool isMonospace = false, bool isBold = false}) {
+  Widget _buildInfoRow(
+    String label,
+    String value, {
+    Color? valueColor,
+    bool isMonospace = false,
+    bool isBold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -167,7 +210,11 @@ class EventDetailsPanel extends StatelessWidget {
             width: 120,
             child: Text(
               '$label:',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
             ),
           ),
           Expanded(

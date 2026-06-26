@@ -18,7 +18,11 @@ class LgAdapter {
   double get targetLon => _targetLon;
 
   /// Update target coordinates configuration
-  void updateTarget({required String country, required double lat, required double lon}) {
+  void updateTarget({
+    required String country,
+    required double lat,
+    required double lon,
+  }) {
     _targetCountry = country;
     _targetLat = lat;
     _targetLon = lon;
@@ -33,16 +37,22 @@ class LgAdapter {
 
     try {
       // 1. Resolve source coordinate using country code
-      final sourceCoord = CountryCoordinatesLookup.getCoordinate(event.countryCode);
+      final sourceCoord = CountryCoordinatesLookup.getCoordinate(
+        event.countryCode,
+      );
 
-      debugPrint('HoneyVision LG Adapter: Visualizing attack vector on LG '
-          'from ${event.countryCode} (${sourceCoord.latitude}, ${sourceCoord.longitude}) '
-          'to $_targetCountry ($_targetLat, $_targetLon)');
+      debugPrint(
+        'HoneyVision LG Adapter: Visualizing attack vector on LG '
+        'from ${event.countryCode} (${sourceCoord.latitude}, ${sourceCoord.longitude}) '
+        'to $_targetCountry ($_targetLat, $_targetLon)',
+      );
 
       // 2. Call KML projection method on the black-box LgService
       await _lgService.sendCyberAttackKML(
         attackName: event.displayTitle,
-        sourceCountry: event.countryName.isNotEmpty ? event.countryName : event.countryCode,
+        sourceCountry: event.countryName.isNotEmpty
+            ? event.countryName
+            : event.countryCode,
         sourceLat: sourceCoord.latitude,
         sourceLon: sourceCoord.longitude,
         targetCountry: _targetCountry,
@@ -65,7 +75,9 @@ class LgAdapter {
 
       return true;
     } catch (e) {
-      debugPrint('HoneyVision LG Adapter Error: Failed to send KML visualization: $e');
+      debugPrint(
+        'HoneyVision LG Adapter Error: Failed to send KML visualization: $e',
+      );
       return false;
     }
   }

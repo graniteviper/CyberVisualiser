@@ -29,13 +29,16 @@ class AttackRepository {
       try {
         final event = AttackEvent.fromJson(item);
         // Deduplicate: check if eventId is already processed
-        if (event.eventId.isNotEmpty && !_processedIds.contains(event.eventId)) {
+        if (event.eventId.isNotEmpty &&
+            !_processedIds.contains(event.eventId)) {
           _processedIds.add(event.eventId);
           newEvents.add(event);
         }
       } catch (e) {
         // Skip malformed records to ensure robustness
-        print('HoneyVision Repository Warning: Skipped parsing malformed record: $e');
+        print(
+          'HoneyVision Repository Warning: Skipped parsing malformed record: $e',
+        );
       }
     }
 

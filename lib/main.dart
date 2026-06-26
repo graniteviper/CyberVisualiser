@@ -18,7 +18,7 @@ import 'utils/config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Load API Key configurations from assets/.env
   await AppConfig.loadConfig();
 
@@ -31,7 +31,9 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<ThemeNotifier>(create: (_) => ThemeNotifier()..loadThemeMode()),
+        ChangeNotifierProvider<ThemeNotifier>(
+          create: (_) => ThemeNotifier()..loadThemeMode(),
+        ),
         ChangeNotifierProvider<LgService>(create: (_) => LgService()),
         ProxyProvider<LgService, LgAdapter>(
           update: (_, lgService, __) => LgAdapter(lgService),
@@ -101,10 +103,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {

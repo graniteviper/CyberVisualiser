@@ -31,11 +31,14 @@ void main() {
       expect(inCoord.longitude, 78.9629);
     });
 
-    test('Should return default coordinates (0.0, 0.0) for unknown country code', () {
-      final unknown = CountryCoordinatesLookup.getCoordinate('XX');
-      expect(unknown.latitude, 0.0);
-      expect(unknown.longitude, 0.0);
-    });
+    test(
+      'Should return default coordinates (0.0, 0.0) for unknown country code',
+      () {
+        final unknown = CountryCoordinatesLookup.getCoordinate('XX');
+        expect(unknown.latitude, 0.0);
+        expect(unknown.longitude, 0.0);
+      },
+    );
   });
 
   group('AttackEvent Model Tests', () {
@@ -106,7 +109,7 @@ void main() {
           'timestamp': '2026-06-07T05:20:01',
           'source_ip': '2.2.2.2',
           'dest_port': 443,
-        }
+        },
       ];
 
       final newEvents = await repository.fetchNewEvents(
@@ -151,9 +154,9 @@ void main() {
 
     test('Should save user keys to preferences and update fields', () async {
       SharedPreferences.setMockInitialValues({});
-      
+
       await AppConfig.saveUserKeys('new-user-hl-key', 'new-user-abuse-key');
-      
+
       expect(AppConfig.userApiKey, 'new-user-hl-key');
       expect(AppConfig.userAbuseIpDbApiKey, 'new-user-abuse-key');
       expect(AppConfig.apiKey, 'new-user-hl-key');

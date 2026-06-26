@@ -61,7 +61,8 @@ class AttackEvent {
       asnNumber: parseInt(json['asn_number'] ?? json['asnNumber']),
       asnOrg: json['asn_org'] ?? json['asnOrg'] ?? '',
       destPort: parseInt(json['dest_port'] ?? json['destPort']),
-      networkProtocol: json['network_protocol'] ?? json['networkProtocol'] ?? '',
+      networkProtocol:
+          json['network_protocol'] ?? json['networkProtocol'] ?? '',
       httpMethod: json['http_method'] ?? json['httpMethod'] ?? '',
       userAgent: json['user_agent'] ?? json['userAgent'] ?? '',
       urlPath: json['url_path'] ?? json['urlPath'] ?? '',

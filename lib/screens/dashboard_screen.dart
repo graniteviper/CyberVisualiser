@@ -23,9 +23,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     final adapter = context.read<LgAdapter>();
-    _targetCountryController = TextEditingController(text: adapter.targetCountry);
-    _targetLatController = TextEditingController(text: adapter.targetLat.toString());
-    _targetLonController = TextEditingController(text: adapter.targetLon.toString());
+    _targetCountryController = TextEditingController(
+      text: adapter.targetCountry,
+    );
+    _targetLatController = TextEditingController(
+      text: adapter.targetLat.toString(),
+    );
+    _targetLonController = TextEditingController(
+      text: adapter.targetLon.toString(),
+    );
   }
 
   @override
@@ -43,16 +49,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (lat == null || lon == null || country.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter valid target coordinate fields.')),
+        const SnackBar(
+          content: Text('Please enter valid target coordinate fields.'),
+        ),
       );
       return;
     }
 
     context.read<LgAdapter>().updateTarget(
-          country: country,
-          lat: lat,
-          lon: lon,
-        );
+      country: country,
+      lat: lat,
+      lon: lon,
+    );
 
     setState(() {
       _showTargetSettings = false;
@@ -68,16 +76,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _targetLatController.text = lat.toString();
     _targetLonController.text = lon.toString();
     context.read<LgAdapter>().updateTarget(
-          country: country,
-          lat: lat,
-          lon: lon,
-        );
+      country: country,
+      lat: lat,
+      lon: lon,
+    );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('LG Target preset loaded: $country')),
     );
   }
 
-  void _showDetails(BuildContext context, AttackEvent event, LgAdapter adapter, bool isLgConnected) {
+  void _showDetails(
+    BuildContext context,
+    AttackEvent event,
+    LgAdapter adapter,
+    bool isLgConnected,
+  ) {
     showDialog(
       context: context,
       builder: (context) => EventDetailsPanel(
@@ -89,7 +102,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<void> _triggerVisualisation(BuildContext context, AttackEvent event, LgAdapter adapter) async {
+  Future<void> _triggerVisualisation(
+    BuildContext context,
+    AttackEvent event,
+    LgAdapter adapter,
+  ) async {
     final provider = context.read<AttackProvider>();
     final success = await provider.triggerVisualization(adapter, event);
 
@@ -101,7 +118,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ? 'Projected attack vector onto Liquid Galaxy successfully.'
                 : 'Failed to send KML projection. Verify connection settings.',
           ),
-          backgroundColor: success ? Colors.green.shade800 : Colors.red.shade800,
+          backgroundColor: success
+              ? Colors.green.shade800
+              : Colors.red.shade800,
         ),
       );
     }
@@ -145,7 +164,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _buildRigConnectionBar(lgService, isDark),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -168,7 +190,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Icons.radio_button_checked,
                                     color: attackProvider.isLoading
                                         ? Colors.amber
-                                        : (attackProvider.events.isNotEmpty ? Colors.green : Colors.red),
+                                        : (attackProvider.events.isNotEmpty
+                                              ? Colors.green
+                                              : Colors.red),
                                     size: 16,
                                   ),
                                   const SizedBox(width: 8),
@@ -180,7 +204,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.0,
-                                        color: isDark ? Colors.blue.shade200 : Colors.indigo.shade800,
+                                        color: isDark
+                                            ? Colors.blue.shade200
+                                            : Colors.indigo.shade800,
                                       ),
                                     ),
                                   ),
@@ -194,7 +220,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 if (attackProvider.lastFetchTime != null) ...[
                                   Text(
                                     'Last scan: ${attackProvider.lastFetchTime!.toLocal().toString().split(' ')[1].split('.')[0]}',
-                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                 ],
@@ -209,10 +238,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 else
                                   TextButton.icon(
                                     style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
                                       minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      backgroundColor: isDark ? Colors.blue.shade900.withOpacity(0.3) : Colors.indigo.shade50,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      backgroundColor: isDark
+                                          ? Colors.blue.shade900.withOpacity(
+                                              0.3,
+                                            )
+                                          : Colors.indigo.shade50,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
@@ -220,10 +257,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     icon: const Icon(Icons.refresh, size: 12),
                                     label: const Text(
                                       'Update',
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     onPressed: () {
-                                      attackProvider.fetchRecentTelemetry(minutes: 30);
+                                      attackProvider.fetchRecentTelemetry(
+                                        minutes: 30,
+                                      );
                                     },
                                   ),
                               ],
@@ -233,7 +275,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(height: 8),
 
                         // Telemetry stream
-                        _buildEventsStream(attackProvider, lgService, lgAdapter, isDark),
+                        _buildEventsStream(
+                          attackProvider,
+                          lgService,
+                          lgAdapter,
+                          isDark,
+                        ),
                       ],
                     ),
                   ),
@@ -253,7 +300,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: isDark ? const Color(0xFF0F111A) : Colors.indigo.shade900,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? Colors.blue.shade900.withOpacity(0.5) : Colors.indigo.shade800,
+            color: isDark
+                ? Colors.blue.shade900.withOpacity(0.5)
+                : Colors.indigo.shade800,
             width: 1,
           ),
         ),
@@ -308,12 +357,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
                 'Rig Server: ${lgService.isConnected ? "CONNECTED" : "DISCONNECTED"} (${lgService.connectionModel.ip}:${lgService.connectionModel.port})',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -322,7 +377,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               minimumSize: Size.zero,
             ),
-            icon: Icon(lgService.isConnected ? Icons.link_off : Icons.link, size: 14),
+            icon: Icon(
+              lgService.isConnected ? Icons.link_off : Icons.link,
+              size: 14,
+            ),
             label: Text(
               lgService.isConnected ? 'Disconnect' : 'Connect',
               style: const TextStyle(fontSize: 11),
@@ -353,23 +411,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisSpacing: 10,
           childAspectRatio: 1.6,
           children: [
-            _buildStatCard('Total Detections', provider.totalEvents.toString(), Icons.history_toggle_off, Colors.blue, isDark),
-            _buildStatCard('Unique IPs', provider.uniqueSourceIps.toString(), Icons.fingerprint, Colors.orange, isDark),
-            _buildStatCard('Unique Countries', provider.uniqueCountries.toString(), Icons.public, Colors.teal, isDark),
-            _buildStatCard('Unique ASNs', provider.uniqueAsns.toString(), Icons.dns, Colors.purple, isDark),
+            _buildStatCard(
+              'Total Detections',
+              provider.totalEvents.toString(),
+              Icons.history_toggle_off,
+              Colors.blue,
+              isDark,
+            ),
+            _buildStatCard(
+              'Unique IPs',
+              provider.uniqueSourceIps.toString(),
+              Icons.fingerprint,
+              Colors.orange,
+              isDark,
+            ),
+            _buildStatCard(
+              'Unique Countries',
+              provider.uniqueCountries.toString(),
+              Icons.public,
+              Colors.teal,
+              isDark,
+            ),
+            _buildStatCard(
+              'Unique ASNs',
+              provider.uniqueAsns.toString(),
+              Icons.dns,
+              Colors.purple,
+              isDark,
+            ),
           ],
         );
       },
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color, bool isDark) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(
-          color: isDark ? Colors.blueGrey.shade900.withOpacity(0.5) : Colors.grey.shade300,
+          color: isDark
+              ? Colors.blueGrey.shade900.withOpacity(0.5)
+              : Colors.grey.shade300,
         ),
       ),
       child: Padding(
@@ -385,7 +475,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: Text(
                     label,
-                    style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -430,13 +524,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
                   'PRESET TARGET LOCATIONS',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Wrap(
@@ -453,7 +554,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Divider(height: 20),
                 const Text(
                   'CUSTOM TARGET COORDINATES',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -473,7 +578,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: TextField(
                         controller: _targetLatController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Lat',
                           isDense: true,
@@ -485,7 +592,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: TextField(
                         controller: _targetLonController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Lon',
                           isDense: true,
@@ -499,15 +608,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(36),
-                    backgroundColor: isDark ? Colors.blue.shade900 : Colors.indigo.shade700,
+                    backgroundColor: isDark
+                        ? Colors.blue.shade900
+                        : Colors.indigo.shade700,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: _applyTargetCoordinates,
-                  child: const Text('Apply Custom Coordinates', style: TextStyle(fontSize: 12)),
+                  child: const Text(
+                    'Apply Custom Coordinates',
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -522,7 +636,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildEventsStream(AttackProvider provider, LgService lgService, LgAdapter adapter, bool isDark) {
+  Widget _buildEventsStream(
+    AttackProvider provider,
+    LgService lgService,
+    LgAdapter adapter,
+    bool isDark,
+  ) {
     if (provider.isLoading && provider.events.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 60.0),
@@ -531,7 +650,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Establishing HoneyLabs RPC link...', style: TextStyle(color: Colors.grey)),
+              Text(
+                'Establishing HoneyLabs RPC link...',
+                style: TextStyle(color: Colors.grey),
+              ),
             ],
           ),
         ),
@@ -544,11 +666,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Center(
           child: Column(
             children: [
-              const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+              const Icon(
+                Icons.error_outline,
+                color: Colors.redAccent,
+                size: 48,
+              ),
               const SizedBox(height: 12),
               Text(
                 'Failed to load live telemetry',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade400),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade400,
+                ),
               ),
               const SizedBox(height: 4),
               Padding(
@@ -576,7 +705,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: isDark ? const Color(0xFF141622) : Colors.grey.shade100,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade300),
+          side: BorderSide(
+            color: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade300,
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 60.0, horizontal: 16.0),
@@ -587,19 +718,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 12),
                 const Text(
                   'No telemetry data loaded.',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? Colors.blue.shade900 : Colors.indigo.shade700,
+                    backgroundColor: isDark
+                        ? Colors.blue.shade900
+                        : Colors.indigo.shade700,
                     foregroundColor: Colors.white,
                   ),
                   icon: provider.isLoading
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Icon(Icons.refresh),
                   label: const Text('Fetch Telemetry'),
@@ -630,31 +769,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
             side: BorderSide(color: sevColor.withOpacity(0.4), width: 1),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 4,
+            ),
             leading: CircleAvatar(
               backgroundColor: sevColor.withOpacity(0.15),
               radius: 18,
               child: Text(
                 event.countryCode.isNotEmpty ? event.countryCode : '?',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: sevColor),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: sevColor,
+                ),
               ),
             ),
             title: Row(
               children: [
                 Text(
                   event.sourceIp,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'monospace'),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1.5,
+                  ),
                   decoration: BoxDecoration(
                     color: sevColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     event.severity.toUpperCase(),
-                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: sevColor),
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: sevColor,
+                    ),
                   ),
                 ),
               ],
@@ -673,7 +830,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Text(
                   'Vector: ${event.displayTitle} -> Port ${event.destPort}',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -699,7 +859,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
-            onTap: () => _showDetails(context, event, adapter, lgService.isConnected),
+            onTap: () =>
+                _showDetails(context, event, adapter, lgService.isConnected),
           ),
         );
       },

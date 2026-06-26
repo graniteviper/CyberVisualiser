@@ -12,7 +12,9 @@ class HoneyLabsService {
   }) async {
     final apiKey = AppConfig.apiKey;
     if (apiKey.isEmpty) {
-      throw Exception('HoneyLabs API Key is not loaded. Please verify .env configuration.');
+      throw Exception(
+        'HoneyLabs API Key is not loaded. Please verify .env configuration.',
+      );
     }
 
     // Format timestamps as ISO-8601 UTC strings
@@ -30,26 +32,26 @@ class HoneyLabsService {
       'method': 'tools/call',
       'params': {
         'name': 'search_events_tool',
-        'arguments': {
-          'since': sinceStr,
-          'until': untilStr,
-          'limit': limit,
-        }
-      }
+        'arguments': {'since': sinceStr, 'until': untilStr, 'limit': limit},
+      },
     });
 
-    final response = await http.post(
-      Uri.parse(AppConfig.mcpEndpoint),
-      headers: {
-        'Authorization': 'Bearer $apiKey',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json, text/event-stream',
-      },
-      body: requestBody,
-    ).timeout(const Duration(seconds: 30));
+    final response = await http
+        .post(
+          Uri.parse(AppConfig.mcpEndpoint),
+          headers: {
+            'Authorization': 'Bearer $apiKey',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/event-stream',
+          },
+          body: requestBody,
+        )
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
-      throw Exception('HoneyLabs API returned HTTP Status Code ${response.statusCode}');
+      throw Exception(
+        'HoneyLabs API returned HTTP Status Code ${response.statusCode}',
+      );
     }
 
     final body = response.body.trim();
