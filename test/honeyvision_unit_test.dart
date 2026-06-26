@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cyber_visualiser/models/attack_event.dart';
 import 'package:cyber_visualiser/services/honeylabs_service.dart';
 import 'package:cyber_visualiser/repositories/attack_repository.dart';
 import 'package:cyber_visualiser/utils/country_coordinates.dart';
+import 'package:cyber_visualiser/utils/config.dart';
 
 class StubHoneyLabsService extends HoneyLabsService {
   List<Map<String, dynamic>> stubbedEvents = [];
@@ -123,6 +125,44 @@ void main() {
         until: DateTime.now(),
       );
       expect(subsequent, isEmpty);
+    });
+  });
+
+  group('AppConfig API Keys and Fallback Tests', () {
+    test('Should fall back to env key if user key is empty', () {
+      AppConfig.envApiKey = 'env-hl-key';
+      AppConfig.envAbuseIpDbApiKey = 'env-abuse-key';
+      AppConfig.userApiKey = '';
+      AppConfig.userAbuseIpDbApiKey = '';
+
+      expect(AppConfig.apiKey, 'env-hl-key');
+      expect(AppConfig.abuseIpDbApiKey, 'env-abuse-key');
+    });
+
+    test('Should prioritize user custom keys if provided', () {
+      AppConfig.envApiKey = 'env-hl-key';
+      AppConfig.envAbuseIpDbApiKey = 'env-abuse-key';
+      AppConfig.userApiKey = 'custom-hl-key';
+      AppConfig.userAbuseIpDbApiKey = 'custom-abuse-key';
+
+      expect(AppConfig.apiKey, 'custom-hl-key');
+      expect(AppConfig.abuseIpDbApiKey, 'custom-abuse-key');
+    });
+
+    test('Should save user keys to preferences and update fields', () async {
+      SharedPreferences.setMockInitialValues({});
+      
+      await AppConfig.saveUserKeys('new-user-hl-key', 'new-user-abuse-key');
+      
+      expect(AppConfig.userApiKey, 'new-user-hl-key');
+      expect(AppConfig.userAbuseIpDbApiKey, 'new-user-abuse-key');
+      expect(AppConfig.apiKey, 'new-user-hl-key');
+      expect(AppConfig.abuseIpDbApiKey, 'new-user-abuse-key');
+
+      // Verify stored keys in mock prefs
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('user_honeylabs_api_key'), 'new-user-hl-key');
+      expect(prefs.getString('user_abuseipdb_api_key'), 'new-user-abuse-key');
     });
   });
 }

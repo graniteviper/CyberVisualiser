@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/lg_service.dart';
 import '../theme/theme_notifier.dart';
+import '../utils/config.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -16,6 +17,8 @@ class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _usernameController;
   late final TextEditingController _passwordController;
   late final TextEditingController _screensController;
+  late final TextEditingController _honeyLabsKeyController;
+  late final TextEditingController _abuseIpDbKeyController;
 
   @override
   void initState() {
@@ -25,6 +28,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _usernameController = TextEditingController();
     _passwordController = TextEditingController();
     _screensController = TextEditingController();
+    _honeyLabsKeyController = TextEditingController();
+    _abuseIpDbKeyController = TextEditingController();
   }
 
   @override
@@ -36,6 +41,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _usernameController.text = connection.username;
     _passwordController.text = connection.password;
     _screensController.text = connection.screens.toString();
+    _honeyLabsKeyController.text = AppConfig.userApiKey;
+    _abuseIpDbKeyController.text = AppConfig.userAbuseIpDbApiKey;
   }
 
   @override
@@ -45,6 +52,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _usernameController.dispose();
     _passwordController.dispose();
     _screensController.dispose();
+    _honeyLabsKeyController.dispose();
+    _abuseIpDbKeyController.dispose();
     super.dispose();
   }
 
@@ -74,9 +83,15 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     await service.saveConnectionSettings();
+
+    // Save custom user API keys
+    final honeyKey = _honeyLabsKeyController.text.trim();
+    final abuseKey = _abuseIpDbKeyController.text.trim();
+    await AppConfig.saveUserKeys(honeyKey, abuseKey);
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection settings saved.')),
+        const SnackBar(content: Text('Connection settings and API keys saved.')),
       );
     }
   }
@@ -104,6 +119,27 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildTextField(label: 'Password', controller: _passwordController, obscureText: true),
             const SizedBox(height: 12),
             _buildTextField(label: 'Screens', controller: _screensController, hintText: '3', keyboardType: TextInputType.number),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('API Credentials', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Custom keys override defaults loaded from the assets/.env file',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(label: 'HoneyLabs API Key', controller: _honeyLabsKeyController, hintText: 'hlk_...'),
+                    const SizedBox(height: 12),
+                    _buildTextField(label: 'AbuseIPDB API Key', controller: _abuseIpDbKeyController, obscureText: true),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -258,3 +294,4 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
+

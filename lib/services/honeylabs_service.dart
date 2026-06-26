@@ -46,7 +46,7 @@ class HoneyLabsService {
         'Accept': 'application/json, text/event-stream',
       },
       body: requestBody,
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
       throw Exception('HoneyLabs API returned HTTP Status Code ${response.statusCode}');
