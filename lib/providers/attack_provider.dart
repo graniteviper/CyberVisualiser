@@ -76,8 +76,8 @@ class AttackProvider extends ChangeNotifier {
         _events.insertAll(0, newEvents);
         
         // Keep feed memory in check (max 500 events)
-        if (_events.length > 500) {
-          _events.removeRange(500, _events.length);
+        if (_events.length > 100) {
+          _events.removeRange(100, _events.length);
         }
       }
 

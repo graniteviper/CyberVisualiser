@@ -77,6 +77,16 @@ HoneyVision leverages two core external threat intelligence sources:
 * Active API Keys for **HoneyLabs** and **AbuseIPDB**.
 
 ### 🔧 Environment Setup
+You can configure threat intelligence credentials in two ways:
+
+#### Option A: User Settings Interface (Recommended)
+1. Launch the application.
+2. Go to the **Connection Settings** page.
+3. Scroll to the **API Credentials** card.
+4. Input your custom **HoneyLabs API Key** and **AbuseIPDB API Key** and tap **Save Settings**.
+5. Custom keys are securely saved locally via `SharedPreferences`.
+
+#### Option B: Assets .env File
 1. Create a file named `.env` in the root folder of the project.
 2. Fill in your credentials using the following structure:
 
@@ -88,8 +98,12 @@ HONEYLAB_API_KEY = your_honeylab_key_here
 ABUSEIPDB_API_KEY = your_abuseipdb_key_here
 ```
 
+> [!NOTE]
+> Custom keys entered via the **Connection Settings** page take priority. If they are left empty or not provided, the application will fallback automatically to the default keys configured in the `.env` asset file.
+
 > [!WARNING]
 > Keep the `.env` file registered in your assets inside `pubspec.yaml` to ensure it is bundled correctly into the application executable resources at runtime.
+
 
 ### 🏃 Running the Application
 To launch HoneyVision locally, execute the following commands in your shell:
