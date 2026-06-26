@@ -51,8 +51,8 @@ void main() {
             'reporterId': 512,
             'reporterCountryCode': 'DE',
             'reporterCountryName': 'Germany',
-          }
-        ]
+          },
+        ],
       };
 
       final report = AbuseIpReport.fromJson(json);
@@ -71,7 +71,7 @@ void main() {
 
       // Test category translation
       expect(item1.categoryNames, containsAll(['Brute-Force', 'SSH']));
-      
+
       final item2 = report.reports[1];
       expect(item2.categoryNames, contains('Web App Attack'));
     });

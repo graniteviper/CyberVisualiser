@@ -12,7 +12,8 @@ class AppConfig {
   static String userAbuseIpDbApiKey = '';
 
   static String get apiKey => userApiKey.isNotEmpty ? userApiKey : envApiKey;
-  static String get abuseIpDbApiKey => userAbuseIpDbApiKey.isNotEmpty ? userAbuseIpDbApiKey : envAbuseIpDbApiKey;
+  static String get abuseIpDbApiKey =>
+      userAbuseIpDbApiKey.isNotEmpty ? userAbuseIpDbApiKey : envAbuseIpDbApiKey;
 
   static const String _keyUserHoneyLabsApiKey = 'user_honeylabs_api_key';
   static const String _keyUserAbuseIpDbApiKey = 'user_abuseipdb_api_key';
@@ -51,7 +52,10 @@ class AppConfig {
   }
 
   /// Saves custom user API keys to SharedPreferences
-  static Future<void> saveUserKeys(String honeyLabsKey, String abuseIpDbKey) async {
+  static Future<void> saveUserKeys(
+    String honeyLabsKey,
+    String abuseIpDbKey,
+  ) async {
     userApiKey = honeyLabsKey.trim();
     userAbuseIpDbApiKey = abuseIpDbKey.trim();
 
@@ -64,4 +68,3 @@ class AppConfig {
     }
   }
 }
-

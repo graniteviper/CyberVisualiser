@@ -24,12 +24,18 @@ class AttackProvider extends ChangeNotifier {
   int get totalEvents => _events.length;
 
   int get uniqueSourceIps {
-    final ips = _events.map((e) => e.sourceIp).where((ip) => ip.isNotEmpty).toSet();
+    final ips = _events
+        .map((e) => e.sourceIp)
+        .where((ip) => ip.isNotEmpty)
+        .toSet();
     return ips.length;
   }
 
   int get uniqueCountries {
-    final countries = _events.map((e) => e.countryCode).where((c) => c.isNotEmpty).toSet();
+    final countries = _events
+        .map((e) => e.countryCode)
+        .where((c) => c.isNotEmpty)
+        .toSet();
     return countries.length;
   }
 
@@ -74,7 +80,7 @@ class AttackProvider extends ChangeNotifier {
       if (newEvents.isNotEmpty) {
         // Prepend new events so that newest attacks display first
         _events.insertAll(0, newEvents);
-        
+
         // Keep feed memory in check (max 500 events)
         if (_events.length > 100) {
           _events.removeRange(100, _events.length);
@@ -93,7 +99,10 @@ class AttackProvider extends ChangeNotifier {
   }
 
   /// Triggers Liquid Galaxy visualization via the adapter
-  Future<bool> triggerVisualization(LgAdapter adapter, AttackEvent event) async {
+  Future<bool> triggerVisualization(
+    LgAdapter adapter,
+    AttackEvent event,
+  ) async {
     return await adapter.visualizeOnLG(event);
   }
 

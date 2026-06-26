@@ -58,17 +58,17 @@ class LgConnectionModel {
 
   LgConnectionModel({
     this.username = 'lg',
+
     // Default username
-
     this.ip = '',
+
     // Default IP address
-
     this.port = 22,
+
     // Default port number
-
     this.password = 'lqgalaxy',
-    // Default password
 
+    // Default password
     this.screens = 3,
     // Default number of screens
   });
@@ -77,25 +77,25 @@ class LgConnectionModel {
   // Updates the values of the connection with the new parameters provided if they are not null
   void updateConnection({
     String? username,
+
     // Defines parameter called "username" of type String?
     // The ? means this parameter is nullable
     // This means that, if not provided, its value will be "null"
-
     String? ip,
+
     // Defines parameter called "ip" of type String?
     // The ? means this parameter is nullable
     // This means that, if not provided, its value will be "null"
-
     int? port,
+
     // Defines parameter called "port" of type int?
     // The ? means this parameter is nullable
     // This means that, if not provided, its value will be "null"
-
     String? password,
+
     // Defines parameter called "password" of type String?
     // The ? means this parameter is nullable
     // This means that, if not provided, its value will be "null"
-
     int? screens,
     // Defines parameter called "screens" of type int?
     // The ? means this parameter is nullable
@@ -164,27 +164,26 @@ class LgConnectionModel {
 
     return LgConnectionModel(
       // New model instance
-
       username: prefs.getString(_keyUsername) ?? 'lg',
+
       // Loads the username from local storage (prefs.getString(_keyUsername))
       // If there is no username in local storage, the fallback value (the value after ??) is used
       // Which in this case is the default value established earlier ('lg')
-
       ip: prefs.getString(_keyIp) ?? '',
+
       // Loads the ip from local storage (prefs.getString(_keyIp))
       // If there is no ip in local storage, the fallback value (the value after ??) is used
       // Which in this case is the default value established earlier ('')
-
       port: prefs.getInt(_keyPort) ?? 22,
+
       // Loads the port from local storage (prefs.getString(_keyPort))
       // If there is no port in local storage, the fallback value (the value after ??) is used
       // Which in this case is the default value established earlier (22)
-
       password: prefs.getString(_keyPassword) ?? 'lqgalaxy',
+
       // Loads the password from local storage (prefs.getString(_keyPassword))
       // If there is no password in local storage, the fallback value (the value after ??) is used
       // Which in this case is the default value established earlier ('lqgalaxy')
-
       screens: prefs.getInt(_keyScreens) ?? 5,
       // Loads the screens number from local storage (prefs.getString(_keyScreens))
       // If there is no screens number in local storage, the fallback value (the value after ??) is used
@@ -218,8 +217,6 @@ class ActiveAttack {
 class LgService extends ChangeNotifier {
   LgService._internal();
 
-
-
   // Private constructor (_), only accessible from within the class
   // Prevents creating multiple instances from outside the class
 
@@ -234,8 +231,6 @@ class LgService extends ChangeNotifier {
   final List<ActiveAttack> _activeAttacks = [];
   // Instead of creating a new object, it returns the existing _instance that was created earlier
   // This enforces the Singleton behavior by always returning the same object
-
-
 
   // -------- SSH client and connection details --------
   SSHClient? _client;
@@ -309,40 +304,39 @@ class LgService extends ChangeNotifier {
   // Used to update the internal Liquid Galaxy connection model with new parameters
   void updateConnectionSettings({
     required String ip,
+
     // The "ip" variable is used to store the IP address of the Liquid Galaxy host
     // 'required' makes sure this value MUST be provided in order for the method to work
-
     required int port,
+
     // The "port" variable is used to store the port number of the SSH connection
     // 'required' makes sure this value MUST be provided in order for the method to work
-
     required String username,
+
     // The "username" variable is used to store the username for SSH login
     // 'required' makes sure this value MUST be provided in order for the method to work
-
     required String password,
+
     // The "password" variable is used to store the password for SSH authentication
     // 'required' makes sure this value MUST be provided in order for the method to work
-
     required int screens,
     // The "screens" variable is used to store the number of screens in the Liquid Galaxy rig
     // 'required' makes sure this value MUST be provided in order for the method to work
   }) {
     _lgConnectionModel.updateConnection(
       // Calls the updateConnetion() method from the LG connection model (created at the beginning of this file)
-
       ip: ip,
+
       // Updates the value of the 'ip' parameter in the LG connection model with the new value that was provided
-
       port: port,
+
       // Updates the value of the 'port' parameter in the LG connection model with the new value that was provided
-
       username: username,
+
       // Updates the value of the 'username' parameter in the LG connection model with the new value that was provided
-
       password: password,
-      // Updates the value of the 'password' parameter in the LG connection model with the new value that was provided
 
+      // Updates the value of the 'password' parameter in the LG connection model with the new value that was provided
       screens: screens,
       // Updates the value of the 'screens' parameter in the LG connection model with the new value that was provided
     );
@@ -372,19 +366,18 @@ class LgService extends ChangeNotifier {
 
       updateConnectionSettings(
         // Uses the updateConnectionSettings() method to update the settings values with the ones that were stored
-
         ip: savedModel.ip,
+
         // Updates the value of the 'ip' parameter in the LG connection model with the value provided from savedModel
-
         port: savedModel.port,
+
         // Updates the value of the 'port' parameter in the LG connection model with the value provided from savedModel
-
         username: savedModel.username,
+
         // Updates the value of the 'username' parameter in the LG connection model with the value provided from savedModel
-
         password: savedModel.password,
-        // Updates the value of the 'password' parameter in the LG connection model with the value provided from savedModel
 
+        // Updates the value of the 'password' parameter in the LG connection model with the value provided from savedModel
         screens: savedModel.screens,
         // Updates the value of the 'screens' parameter in the LG connection model with the value provided from savedModel
       );
@@ -434,10 +427,9 @@ class LgService extends ChangeNotifier {
 
       final socket = await SSHSocket.connect(
         // Attempts to establish a TCP socket connection to the Liquid Galaxy
-
         _lgConnectionModel.ip,
-        // In order to do so, uses the IP provided from the connection model
 
+        // In order to do so, uses the IP provided from the connection model
         _lgConnectionModel.port,
         // And the port provided from the connection model
         // And stores this values in a variable called 'socket'
@@ -447,18 +439,17 @@ class LgService extends ChangeNotifier {
 
       _client = SSHClient(
         // Creates an instance from the SSHClient class and stores it in the '_client' variable
-
         socket,
+
         // In order to do that, it uses the socket we just created (which has the IP and the port)
-
         username: _lgConnectionModel.username,
-        // Sets the value of the 'username' parameter in the LG connection model with the value provided from the LG connection model
 
+        // Sets the value of the 'username' parameter in the LG connection model with the value provided from the LG connection model
         onPasswordRequest: () => _lgConnectionModel.password,
+
         // () => _lgConnectionModel.password returns the password stored in the LG connection model
         // Sets this password as the value of the 'onPasswordRequest' parameter
         // This allows SSHClient to ask for the password rather than passing it directly
-
         keepAliveInterval: const Duration(seconds: 10),
         // const Duration(seconds: 10) creates a Duration object that represents a time interval of 10 seconds
         // This value is provided to the 'keepAliveInterval' parameter
@@ -482,19 +473,25 @@ class LgService extends ChangeNotifier {
       // Returning true indicates that the connection was successful
     } on TimeoutException catch (e) {
       // If a TimeoutException takes place
-      debugPrint('LG Connection TimeoutException: Connection to ${_lgConnectionModel.ip}:${_lgConnectionModel.port} timed out: $e');
+      debugPrint(
+        'LG Connection TimeoutException: Connection to ${_lgConnectionModel.ip}:${_lgConnectionModel.port} timed out: $e',
+      );
 
       _currentConnectionAttempts++;
       // The current number of connection attempts increases by 1
     } on SocketException catch (e) {
       // If a SocketException takes place
-      debugPrint('LG Connection SocketException: Socket error connecting to ${_lgConnectionModel.ip}:${_lgConnectionModel.port}: $e');
+      debugPrint(
+        'LG Connection SocketException: Socket error connecting to ${_lgConnectionModel.ip}:${_lgConnectionModel.port}: $e',
+      );
 
       _currentConnectionAttempts++;
       // The current number of connection attempts increases by 1
     } catch (e) {
       // Catch any other exceptions (e.g. handshake or authentication errors)
-      debugPrint('LG Connection Exception: Unexpected error connecting to ${_lgConnectionModel.ip}:${_lgConnectionModel.port}: $e');
+      debugPrint(
+        'LG Connection Exception: Unexpected error connecting to ${_lgConnectionModel.ip}:${_lgConnectionModel.port}: $e',
+      );
 
       _currentConnectionAttempts++;
       // The current number of connection attempts increases by 1
@@ -600,14 +597,13 @@ class LgService extends ChangeNotifier {
 
     final result = await execute(
       // Calls the execute() method previously defined in this file
-
       'echo "$content" > /tmp/query.txt',
+
       // This is the 'command' parameter from the execute() method
       // What it does is write the message from the 'content' parameter into the file /tmp/query.txt on the remote Liquid Galaxy machine
       // echo "$content" outputs the text
       // > redirects it into the file
       // This file is read by the Liquid Galaxy system to trigger actions depending on its content
-
       'Query sent: $content',
       // This is the 'successMessage' parameter from the execute() method
       // In this case, if the method is successful it prints the query that was sent on the debug console
@@ -713,15 +709,14 @@ class LgService extends ChangeNotifier {
       await execute(
         // Executes the execute() method remotely on the specified screen
         // 'await' pauses execution until
-
         "sshpass -p ${_lgConnectionModel.password} ssh -t lg$screenNumber '$addCommand'",
+
         // This is the value of the 'command' parameter
         // sshpass -p ${_lgConnectionModel.password} provides the password automatically (without user input)
         // ssh -t forces a pseudo-terminal (a virtual terminal window) allocation, making the remote server think we are typing from a real terminal
         // This makes sure that commands that depend on environment can still run
         // lg$screenNumber is the hostname or user@host for the specific screen we want to target
         // '$addCommand' is the actual command we want to run on a specific screen, in this case the command use to add the refresh instructions
-
         'Refresh interval added to screen $screenNumber',
         // This is the 'successMessage' parameter from the execute() method
         // In this case, confirms a refresh interval has been added to a specific screen (and the number correspondant to this screen)
@@ -796,15 +791,14 @@ class LgService extends ChangeNotifier {
       await execute(
         // Executes the execute() method remotely on the specified screen
         // 'await' pauses execution until the execute() method is successfully executed
-
         "sshpass -p ${_lgConnectionModel.password} ssh -t lg$screenNumber '$removeCommand'",
+
         // This is the value of the 'command' parameter
         // sshpass -p ${_lgConnectionModel.password} provides the password automatically (without user input)
         // ssh -t forces a pseudo-terminal (a virtual terminal window) allocation, making the remote server think we are typing from a real terminal
         // This makes sure that commands that depend on environment can still run
         // lg$screenNumber is the hostname or user@host for the specific screen we want to target
         // '$removeCommand' is the actual command we want to run on a specific screen, in this case the command use to remove the refresh instructions
-
         'Refresh interval removed from screen $screenNumber',
         // This is the 'successMessage' parameter from the execute() method
         // In this case, confirms a refresh interval has been removed from a specific screen (and the number correspondant to this screen)
@@ -982,12 +976,11 @@ class LgService extends ChangeNotifier {
       // Executes the execute() method remotely on the specified screen
       // 'await' pauses execution until the execute() method is successfully executed
       // The result is stored in the 'headerCleared' variable
-
       clearCommand,
+
       // This is the value of the 'command' parameter
       // In this case, is the value of the 'clearCommand' variable that was defined earlier
       // This variable has the line to clear the KMLs
-
       'KMLs.txt cleared',
       // This is the 'successMessage' parameter from the execute() method
       // In this case, confirms the KML were cleared
@@ -1020,14 +1013,13 @@ class LgService extends ChangeNotifier {
       // Executes the execute() method remotely on the specified screen
       // 'await' pauses execution until the execute() method is successfully executed
       // The result is stored in the 'cleared' variable
-
       "echo '$blankKml' > /var/www/html/kml/slave_$rightMost.kml",
+
       // This is the value of the 'command' parameter
       // echo '$blankKml' outputs the content of the blankKml string
       // > /var/www/html/kml/slave_$rightMost.kml redirects that output into a file called slave_$rightMost.kml
       // $rightMost is replaced to the number correspondant to the furthest right screen
       // This line overwrites the existing KML file on that screen with a blank KML file (which "clears" it)
-
       'Rightmost screen cleared',
       // This is the 'successMessage' parameter from the execute() method
       // In this case, confirms the rightmost screen was cleared
@@ -1076,14 +1068,13 @@ class LgService extends ChangeNotifier {
     await execute(
       // Executes the execute() method remotely on the specified screen
       // 'await' pauses execution until the execute() method is successfully executed
-
       "echo '$blankKml' > /var/www/html/kml/slave_$leftMost.kml",
+
       // This is the value of the 'command' parameter
       // echo '$blankKml' outputs the content of the blankKml string
       // > /var/www/html/kml/slave_$leftMost.kml redirects that output into a file called slave_$leftMost.kml
       // $leftMost is replaced to the number correspondant to the furthest left screen
       // This line overwrites the existing KML file on that screen with a blank KML file (which "clears" it)
-
       'KML logo cleared',
       // This is the 'successMessage' parameter from the execute() method
       // In this case, it confirms that the KML logo (image or graphic) was successfully cleared
@@ -1120,14 +1111,13 @@ class LgService extends ChangeNotifier {
     await execute(
       // Executes the execute() method remotely on the specified screen
       // 'await' pauses execution until the execute() method is successfully executed
-
       "echo '$blankKml' > /var/www/html/kml/slave_$rightMost.kml",
+
       // This is the value of the 'command' parameter
       // echo '$blankKml' outputs the content of the blankKml string
       // > /var/www/html/kml/slave_$rightMost.kml redirects that output into a file called slave_$rightMost.kml
       // $rightMost is replaced to the number correspondant to the furthest right screen
       // This line overwrites the existing KML file on that screen with a blank KML file (which "clears" it)
-
       'KML balloon cleared',
       // This is the 'successMessage' parameter from the execute() method
       // In this case, it informs that the balloons were successfully cleared from the screen
@@ -1164,13 +1154,12 @@ class LgService extends ChangeNotifier {
 
       await Future.wait([
         // Runs all three methods to clear the screens in parallel and waits for them to finish before continuing
-
         cleanKML(),
+
         // Cleans the KML files
-
         cleanLogos(),
-        // Cleans the KML logos
 
+        // Cleans the KML logos
         cleanBalloonKML(),
         // Cleans the KML balloons
       ]);
@@ -1327,16 +1316,15 @@ class LgService extends ChangeNotifier {
           // Executes the execute() method remotely on the specified screen
           // 'await' pauses execution until the execute() method is successfully executed
           // The result is stored in the 'result' variable
-
           rebootCommand,
+
           // This is the value of the 'rebootCommand' parameter
           // In this case is the line used to reboot using admin privileges and without manual input of the password
-
-      'Screen $i was successfully rebooted',
+          'Screen $i was successfully rebooted',
           // This is the 'successMessage' parameter from the execute() method
           // In this case, it informs that a screen ('i' will be substituted with the current screen number on the loop) was successfully rebooted
         );
- 
+
         allSuccessful = allSuccessful && result;
         // Used to track if all operations have bee successful so far
         // If allSuccessful is still true, the command continues
@@ -1363,16 +1351,15 @@ class LgService extends ChangeNotifier {
           // Executes the execute() method remotely on the main screen
           // 'await' pauses execution until the execute() method is successfully executed
           // The result is stored in the 'lg1RebootResult' variable
-
           rebootCommandLg1,
+
           // This is the value of the 'rebootCommand' parameter
           // In this case is the line used to reboot the main screen using admin privileges and without manual input of the password
-
           'The main screen was suceesfully rebooted',
           // This is the 'successMessage' parameter from the execute() method
           // In this case, it informs that the main screen was successfully rebooted
         );
- 
+
         allSuccessful = allSuccessful && result && lg1RebootResult;
         // Used to track if all operations have bee successful so far
         // If allSuccessful is still true, the command continues
@@ -1421,7 +1408,8 @@ class LgService extends ChangeNotifier {
             // NOT VISIBLE TO USERS, only to developers in the debug console
 
             await flyTo(
-                '<LookAt><longitude>-3.7492199</longitude><latitude>40.4636688</latitude><altitude>0</altitude><heading>0</heading><tilt>60</tilt><range>2000</range><altitudeMode>relativeToGround</altitudeMode></LookAt>');
+              '<LookAt><longitude>-3.7492199</longitude><latitude>40.4636688</latitude><altitude>0</altitude><heading>0</heading><tilt>60</tilt><range>2000</range><altitudeMode>relativeToGround</altitudeMode></LookAt>',
+            );
             // flyTo() is a method we defined earlier that moves the Liquid Galaxy view
             // Everything is inside <LookAt>...</LookAt>, a tag that describes exactly where and how to position the virtual camera
             // <longitude>-3.7492199</longitude> is the longitude coordinate (you can choose any longitude you want, in this case is near Madrid, Spain)
@@ -1469,7 +1457,8 @@ class LgService extends ChangeNotifier {
     // Defines an asynchronous method that returns a boolean value
     // 'async' allows to use 'await' inside the function
 
-    final relaunchCmd = '''
+    final relaunchCmd =
+        '''
         RELAUNCH_CMD="\\ 
         if [ -f /etc/init/lxdm.conf ]; 
           then
@@ -1512,11 +1501,10 @@ class LgService extends ChangeNotifier {
       // Executes the execute() method remotely on the main screen
       // 'await' pauses execution until the execute() method is successfully executed
       // The result is stored in the 'result' variable
-
       relaunchCmd,
+
       // This is the value of the 'rebootCommand' parameter
       // In this case is the line used to relaunch the Liquid Galaxy
-
       'The Liquid Galaxy was relaunched successfully',
       // This is the 'successMessage' parameter from the execute() method
       // In this case, it informs that the relaunch was successful
@@ -1592,10 +1580,9 @@ class LgService extends ChangeNotifier {
 
       final fileNameWithRandom = fileName.replaceAll(
         // Takes the file provided as the value of "fileName"
-
         '.kml',
-        // Replaces this string
 
+        // Replaces this string
         '_$randomNumber.kml',
         // With this string
         // And stores the result in a variable called "fileNameWithRandom"
@@ -1617,11 +1604,11 @@ class LgService extends ChangeNotifier {
         // sftp.open() opens (or creates) the file on the remote Liquid Galaxy machine using the open() method of the sftp client
         // Stores the result in a variable called "file"
         // await pauses execution until the call of this method is complete
-
         '/var/www/html/$fileNameWithRandom',
-        // Opens (or creates) the file inside the directory /var/www/html/
 
-        mode: SftpFileOpenMode.truncate |
+        // Opens (or creates) the file inside the directory /var/www/html/
+        mode:
+            SftpFileOpenMode.truncate |
             SftpFileOpenMode.create |
             SftpFileOpenMode.write,
         // SftpFileOpenMode indicates the sftp file is in "open" mode
@@ -1668,13 +1655,12 @@ class LgService extends ChangeNotifier {
       await execute(
         // Executes the execute() method remotely on the main screen
         // 'await' pauses execution until the execute() method is successfully executed
-
         'echo "http://lg1:81/$fileNameWithRandom" > /var/www/html/kmls.txt',
+
         // This is the value of the 'rebootCommand' parameter
         // In this case it is a remote SSH command that runs after the upload finishes
         // This writes the file's public URL (Liquid Galaxy web server path) into /var/www/html/kmls.txt
         // This tells Liquid Galaxy which KML file to display
-
         'KML file written successfully',
         // This is the 'successMessage' parameter from the execute() method
         // In this case, it informs that the KML was successfully written
@@ -1699,7 +1685,6 @@ class LgService extends ChangeNotifier {
       await query('slave_$leftMost=https://lg1:81/$uploadedName');
     }
   }
-
 
   // -------- sendLogo() method --------
 
@@ -1811,11 +1796,10 @@ class LgService extends ChangeNotifier {
           // Executes the execute() method remotely on the main screen
           // 'await' pauses execution until the execute() method is successfully executed
           // The result is stored in the 'result' variable
-
           shutdownCommand,
+
           // This is the value of the 'rebootCommand' parameter
           // In this case is the line used to shut down using admin privileges and without manual input of the password
-
           'Liquid Galaxy screen $i was shut down successfully',
           // This is the 'successMessage' parameter from the execute() method
           // In this case, it informs that a certain screen was shut down
@@ -1857,11 +1841,10 @@ class LgService extends ChangeNotifier {
         // Executes the execute() method remotely on the main screen
         // 'await' pauses execution until the execute() method is successfully executed
         // The result is stored in the 'lg1Result' variable
-
         shutdownCommandLg1,
+
         // This is the value of the 'rebootCommand' parameter
         // In this case is the line used to shut down the main screen using admin privileges and without manual input of the password
-
         'Liquid Galaxy 1 (main node) was shut down successfully',
         // This is the 'successMessage' parameter from the execute() method
         // In this case, it informs that the main screen was shut down
@@ -1902,8 +1885,8 @@ class LgService extends ChangeNotifier {
   }
 
   // -------- getScreenNumber() method --------
-// Used to get the number of screens in the Liquid Galaxy system
-// The one used in GSoC is 5 screens but just in case
+  // Used to get the number of screens in the Liquid Galaxy system
+  // The one used in GSoC is 5 screens but just in case
   int getScreenNumber() {
     return _lgConnectionModel.screens;
   }
@@ -1929,7 +1912,6 @@ class LgService extends ChangeNotifier {
       // 2. Execute the command via your SSH client
       // Note: Replace '_client' with your actual SSH client variable name
       await execute(command, "Tour '$tourName' started.");
-       
     } catch (e) {
       print("Error starting tour: $e");
     }
@@ -1953,7 +1935,6 @@ class LgService extends ChangeNotifier {
 
       // 2. Execute the command
       await execute(command, "Tour stopped.");
-       
     } catch (e) {
       print("Error stopping tour: $e");
     }
@@ -2002,7 +1983,8 @@ class LgService extends ChangeNotifier {
     double size = 0.01; // Size in degrees (roughly 1.1km)
     double altitude = 1000; // Altitude in meters
 
-    String kml = '''<?xml version="1.0" encoding="UTF-8"?>
+    String kml =
+        '''<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <name>3D Pyramid New York</name>
@@ -2101,9 +2083,10 @@ class LgService extends ChangeNotifier {
 </kml>''';
 
     await uploadKml(kml, 'pyramid.kml');
-    
+
     // Fly to the pyramid
-    final lookAt = '''
+    final lookAt =
+        '''
       <LookAt>
         <longitude>$lon</longitude>
         <latitude>$lat</latitude>
@@ -2124,7 +2107,8 @@ class LgService extends ChangeNotifier {
     final dLon = (lon2 - lon1) * math.pi / 180;
 
     final y = math.sin(dLon) * math.cos(lat2Rad);
-    final x = math.cos(lat1Rad) * math.sin(lat2Rad) -
+    final x =
+        math.cos(lat1Rad) * math.sin(lat2Rad) -
         math.sin(lat1Rad) * math.cos(lat2Rad) * math.cos(dLon);
 
     final brng = math.atan2(y, x) * 180 / math.pi;
@@ -2132,23 +2116,39 @@ class LgService extends ChangeNotifier {
   }
 
   // Helper to calculate distance in meters using Haversine formula
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     const r = 6371000; // Earth's radius in meters
     final dLat = (lat2 - lat1) * math.pi / 180;
     final dLon = (lon2 - lon1) * math.pi / 180;
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) *
-        math.sin(dLon / 2) * math.sin(dLon / 2);
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) *
+            math.cos(lat2 * math.pi / 180) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return r * c;
   }
 
   // Helper to generate 3D curved parabolic coordinate string
-  String _generateParabolicCoordinates(double sLat, double sLon, double tLat, double tLon) {
+  String _generateParabolicCoordinates(
+    double sLat,
+    double sLon,
+    double tLat,
+    double tLon,
+  ) {
     final List<String> coords = [];
     final steps = 40;
     final distance = _calculateDistance(sLat, sLon, tLat, tLon);
-    final double maxHeight = math.min(distance * 0.15, 1500000); // 15% of distance, capped at 1,500km
+    final double maxHeight = math.min(
+      distance * 0.15,
+      1500000,
+    ); // 15% of distance, capped at 1,500km
 
     for (int i = 0; i <= steps; i++) {
       final t = i / steps;
@@ -2192,16 +2192,18 @@ class LgService extends ChangeNotifier {
 
     try {
       // Add the current attack to active attacks list
-      _activeAttacks.add(ActiveAttack(
-        attackName: attackName,
-        sourceCountry: sourceCountry,
-        sourceLat: sourceLat,
-        sourceLon: sourceLon,
-        targetCountry: targetCountry,
-        targetLat: targetLat,
-        targetLon: targetLon,
-        severity: severity,
-      ));
+      _activeAttacks.add(
+        ActiveAttack(
+          attackName: attackName,
+          sourceCountry: sourceCountry,
+          sourceLat: sourceLat,
+          sourceLon: sourceLon,
+          targetCountry: targetCountry,
+          targetLat: targetLat,
+          targetLon: targetLon,
+          severity: severity,
+        ),
+      );
 
       // Limit to 15 active attacks to keep screens clean
       if (_activeAttacks.length > 15) {
@@ -2213,25 +2215,26 @@ class LgService extends ChangeNotifier {
       for (int index = 0; index < _activeAttacks.length; index++) {
         final attack = _activeAttacks[index];
         final id = index + 1;
-        
+
         final severityLower = attack.severity.toLowerCase();
         final stylePrefix = severityLower == 'critical'
             ? 'critical'
             : severityLower == 'high'
-                ? 'high'
-                : severityLower == 'medium'
-                    ? 'medium'
-                    : 'low';
+            ? 'high'
+            : severityLower == 'medium'
+            ? 'medium'
+            : 'low';
 
         final severityColor = severityLower == 'critical'
             ? '#ff4a5a'
             : severityLower == 'high'
-                ? '#ff9f43'
-                : severityLower == 'medium'
-                    ? '#feca57'
-                    : '#1dd1a1';
+            ? '#ff9f43'
+            : severityLower == 'medium'
+            ? '#feca57'
+            : '#1dd1a1';
 
-        final description = '''<description><![CDATA[
+        final description =
+            '''<description><![CDATA[
         <div style="font-family: 'Outfit', 'Segoe UI', Roboto, sans-serif; min-width: 280px; padding: 16px; background-color: #0f111a; color: #ffffff; border-radius: 12px; border: 1px solid #1e293b;">
           <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 16px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; letter-spacing: 0.5px;">ATTACK TELEMETRY DETAIL</h3>
           <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
@@ -2301,7 +2304,8 @@ class LgService extends ChangeNotifier {
     </Placemark>''');
       }
 
-      final kmlContent = '''<?xml version="1.0" encoding="UTF-8"?>
+      final kmlContent =
+          '''<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
   <Document>
     <name>Active Cyber Attacks</name>
@@ -2386,9 +2390,15 @@ class LgService extends ChangeNotifier {
       }
 
       // Calculate bearing from target looking back to source
-      final heading = _calculateBearing(targetLat, targetLon, sourceLat, sourceLon);
+      final heading = _calculateBearing(
+        targetLat,
+        targetLon,
+        sourceLat,
+        sourceLon,
+      );
 
-      final lookAt = '''<LookAt>
+      final lookAt =
+          '''<LookAt>
           <longitude>$targetLon</longitude>
           <latitude>$targetLat</latitude>
           <altitude>0</altitude>
@@ -2419,8 +2429,8 @@ class LgService extends ChangeNotifier {
       final badgeColor = severity.toLowerCase() == 'critical'
           ? '#ff0055'
           : severity.toLowerCase() == 'high'
-              ? '#ff9900'
-              : '#ffff00';
+          ? '#ff9900'
+          : '#ffff00';
 
       // We generate a description with HTML formatted text inside the ScreenOverlay balloon, or we can use standard overlay
       final kml = '''<?xml version="1.0" encoding="UTF-8"?>

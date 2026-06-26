@@ -45,34 +45,40 @@ void main() {
   });
 
   group('LgService', () {
-    test('calculateRightMostScreen and calculateLeftMostScreen return correct values', () {
-      final service = LgService();
+    test(
+      'calculateRightMostScreen and calculateLeftMostScreen return correct values',
+      () {
+        final service = LgService();
 
-      expect(service.calculateRightMostScreen(1), 1);
-      expect(service.calculateRightMostScreen(5), 3);
-      expect(service.calculateLeftMostScreen(1), 1);
-      expect(service.calculateLeftMostScreen(5), 4);
-    });
+        expect(service.calculateRightMostScreen(1), 1);
+        expect(service.calculateRightMostScreen(5), 3);
+        expect(service.calculateLeftMostScreen(1), 1);
+        expect(service.calculateLeftMostScreen(5), 4);
+      },
+    );
 
-    test('saveConnectionSettings persists service connection settings', () async {
-      SharedPreferences.setMockInitialValues({});
-      final service = LgService();
-      service.updateConnectionSettings(
-        ip: '10.0.0.10',
-        port: 2201,
-        username: 'lg',
-        password: 'secret',
-        screens: 3,
-      );
+    test(
+      'saveConnectionSettings persists service connection settings',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final service = LgService();
+        service.updateConnectionSettings(
+          ip: '10.0.0.10',
+          port: 2201,
+          username: 'lg',
+          password: 'secret',
+          screens: 3,
+        );
 
-      await service.saveConnectionSettings();
-      final loaded = await LgConnectionModel.loadFromPreferences();
+        await service.saveConnectionSettings();
+        final loaded = await LgConnectionModel.loadFromPreferences();
 
-      expect(loaded.ip, '10.0.0.10');
-      expect(loaded.port, 2201);
-      expect(loaded.username, 'lg');
-      expect(loaded.password, 'secret');
-      expect(loaded.screens, 3);
-    });
+        expect(loaded.ip, '10.0.0.10');
+        expect(loaded.port, 2201);
+        expect(loaded.username, 'lg');
+        expect(loaded.password, 'secret');
+        expect(loaded.screens, 3);
+      },
+    );
   });
 }

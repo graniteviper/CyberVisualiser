@@ -19,7 +19,9 @@ void main() {
     });
 
     test('loadThemeMode restores persisted theme mode', () async {
-      SharedPreferences.setMockInitialValues({'theme_mode': ThemeMode.light.name});
+      SharedPreferences.setMockInitialValues({
+        'theme_mode': ThemeMode.light.name,
+      });
       final themeNotifier = ThemeNotifier();
 
       await themeNotifier.loadThemeMode();

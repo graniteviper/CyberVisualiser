@@ -30,8 +30,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
     // Regular expression for validating IPv4
     final ipv4Reg = RegExp(r'^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$');
     // Regular expression for validating IPv6
-    final ipv6Reg = RegExp(r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$');
-    
+    final ipv6Reg = RegExp(
+      r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$',
+    );
+
     if (!ipv4Reg.hasMatch(ipTrimmed) && !ipv6Reg.hasMatch(ipTrimmed)) {
       return 'Please enter a valid IPv4 or IPv6 address';
     }
@@ -105,7 +107,9 @@ class _TrackIpPageState extends State<TrackIpPage> {
         color: isDark ? const Color(0xFF0F111A) : Colors.indigo.shade900,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? Colors.blue.shade900.withOpacity(0.5) : Colors.indigo.shade800,
+            color: isDark
+                ? Colors.blue.shade900.withOpacity(0.5)
+                : Colors.indigo.shade800,
             width: 1,
           ),
         ),
@@ -160,37 +164,57 @@ class _TrackIpPageState extends State<TrackIpPage> {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
                 'Rig Server: ${lgService.isConnected ? "CONNECTED" : "DISCONNECTED"} (${lgService.connectionModel.ip}:${lgService.connectionModel.port})',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
           if (!lgService.isConnected)
             const Text(
               'Visualization Offline',
-              style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
             )
           else
             const Text(
               'Visualization Ready',
-              style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildFormCard(TrackIpProvider provider, TrackIpLgService trackLgService, bool isDark) {
+  Widget _buildFormCard(
+    TrackIpProvider provider,
+    TrackIpLgService trackLgService,
+    bool isDark,
+  ) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isDark ? Colors.blueGrey.shade900.withOpacity(0.5) : Colors.grey.shade300,
+          color: isDark
+              ? Colors.blueGrey.shade900.withOpacity(0.5)
+              : Colors.grey.shade300,
         ),
       ),
       child: Padding(
@@ -232,14 +256,22 @@ class _TrackIpPageState extends State<TrackIpPage> {
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.blue.shade900.withOpacity(0.3) : Colors.indigo.shade50,
+                      color: isDark
+                          ? Colors.blue.shade900.withOpacity(0.3)
+                          : Colors.indigo.shade50,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '${_maxAgeInDays.toInt()} Days',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -265,7 +297,9 @@ class _TrackIpPageState extends State<TrackIpPage> {
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: isDark ? Colors.blue.shade900 : Colors.indigo.shade700,
+                        backgroundColor: isDark
+                            ? Colors.blue.shade900
+                            : Colors.indigo.shade700,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -284,7 +318,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                               ),
                             )
                           : const Icon(Icons.location_searching_rounded),
-                      label: const Text('Track IP Address', style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: const Text(
+                        'Track IP Address',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                   if (provider.isVisualized) ...[
@@ -304,9 +341,9 @@ class _TrackIpPageState extends State<TrackIpPage> {
                           ? null
                           : () => provider.clearLGVisuals(trackLgService),
                     ),
-                  ]
+                  ],
                 ],
-              )
+              ),
             ],
           ),
         ),
@@ -314,7 +351,11 @@ class _TrackIpPageState extends State<TrackIpPage> {
     );
   }
 
-  Widget _buildResultsSection(TrackIpProvider provider, TrackIpLgService trackLgService, bool isDark) {
+  Widget _buildResultsSection(
+    TrackIpProvider provider,
+    TrackIpLgService trackLgService,
+    bool isDark,
+  ) {
     if (provider.isLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 60.0),
@@ -323,7 +364,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
             children: [
               CircularProgressIndicator(),
               const SizedBox(height: 16),
-              Text('Fetching records & generating KML maps...', style: TextStyle(color: Colors.grey)),
+              Text(
+                'Fetching records & generating KML maps...',
+                style: TextStyle(color: Colors.grey),
+              ),
             ],
           ),
         ),
@@ -341,11 +385,19 @@ class _TrackIpPageState extends State<TrackIpPage> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              const Icon(Icons.error_outline, color: Colors.redAccent, size: 36),
+              const Icon(
+                Icons.error_outline,
+                color: Colors.redAccent,
+                size: 36,
+              ),
               const SizedBox(height: 8),
               const Text(
                 'Intel Query Error',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.redAccent),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.redAccent,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -369,7 +421,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
               SizedBox(height: 12),
               Text(
                 'No active tracked IP.',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
               ),
               SizedBox(height: 4),
               Text(
@@ -415,11 +470,16 @@ class _TrackIpPageState extends State<TrackIpPage> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       tooltip: 'Close Card and Clear Visuals',
-                      onPressed: () => provider.clearState(lgService: trackLgService),
+                      onPressed: () =>
+                          provider.clearState(lgService: trackLgService),
                     ),
                   ],
                 ),
@@ -437,7 +497,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: sevColor,
                         borderRadius: BorderRadius.circular(4),
@@ -454,7 +517,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                     const SizedBox(width: 8),
                     if (provider.isVisualized)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.blue.shade900.withOpacity(0.5),
                           borderRadius: BorderRadius.circular(4),
@@ -463,11 +529,19 @@ class _TrackIpPageState extends State<TrackIpPage> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.tv_rounded, size: 10, color: Colors.cyanAccent),
+                            Icon(
+                              Icons.tv_rounded,
+                              size: 10,
+                              color: Colors.cyanAccent,
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Visualizing on LG',
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.cyanAccent),
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.cyanAccent,
+                              ),
                             ),
                           ],
                         ),
@@ -475,11 +549,27 @@ class _TrackIpPageState extends State<TrackIpPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _buildCardInfoRow('Country', report.countryName.isNotEmpty ? report.countryName : report.countryCode),
+                _buildCardInfoRow(
+                  'Country',
+                  report.countryName.isNotEmpty
+                      ? report.countryName
+                      : report.countryCode,
+                ),
                 _buildCardInfoRow('ISP', report.isp),
-                _buildCardInfoRow('Domain', report.domain.isEmpty ? 'N/A' : report.domain),
-                _buildCardInfoRow('Confidence', '${report.abuseConfidenceScore}%', valColor: sevColor, isBold: true),
-                _buildCardInfoRow('Total Reports', '${report.totalReports} reports'),
+                _buildCardInfoRow(
+                  'Domain',
+                  report.domain.isEmpty ? 'N/A' : report.domain,
+                ),
+                _buildCardInfoRow(
+                  'Confidence',
+                  '${report.abuseConfidenceScore}%',
+                  valColor: sevColor,
+                  isBold: true,
+                ),
+                _buildCardInfoRow(
+                  'Total Reports',
+                  '${report.totalReports} reports',
+                ),
               ],
             ),
           ),
@@ -503,7 +593,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
               child: Center(
                 child: Text(
                   'No reports returned within the search window.',
-                  style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             ),
@@ -519,7 +612,11 @@ class _TrackIpPageState extends State<TrackIpPage> {
                 margin: const EdgeInsets.only(bottom: 10.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade300),
+                  side: BorderSide(
+                    color: isDark
+                        ? Colors.blueGrey.shade900
+                        : Colors.grey.shade300,
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -531,16 +628,29 @@ class _TrackIpPageState extends State<TrackIpPage> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 12,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 6),
                               Text(
-                                item.reportedAt.toLocal().toString().split(' ')[0],
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                                item.reportedAt.toLocal().toString().split(
+                                  ' ',
+                                )[0],
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ],
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.blueGrey.shade800.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(4),
@@ -549,7 +659,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                               item.reporterCountryName.isNotEmpty
                                   ? item.reporterCountryName
                                   : item.reporterCountryCode,
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -561,15 +674,24 @@ class _TrackIpPageState extends State<TrackIpPage> {
                           runSpacing: 4,
                           children: item.categoryNames.map((name) {
                             return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.red.shade900.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: Colors.red.shade900.withOpacity(0.3)),
+                                border: Border.all(
+                                  color: Colors.red.shade900.withOpacity(0.3),
+                                ),
                               ),
                               child: Text(
                                 name,
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.redAccent.shade100),
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.redAccent.shade100,
+                                ),
                               ),
                             );
                           }).toList(),
@@ -577,10 +699,14 @@ class _TrackIpPageState extends State<TrackIpPage> {
                         const SizedBox(height: 8),
                       ],
                       Text(
-                        item.comment.trim().isEmpty ? 'No comment provided.' : item.comment.trim(),
+                        item.comment.trim().isEmpty
+                            ? 'No comment provided.'
+                            : item.comment.trim(),
                         style: TextStyle(
                           fontSize: 12,
-                          fontStyle: item.comment.trim().isEmpty ? FontStyle.italic : FontStyle.normal,
+                          fontStyle: item.comment.trim().isEmpty
+                              ? FontStyle.italic
+                              : FontStyle.normal,
                           color: isDark ? Colors.grey.shade300 : Colors.black87,
                         ),
                       ),
@@ -594,7 +720,12 @@ class _TrackIpPageState extends State<TrackIpPage> {
     );
   }
 
-  Widget _buildCardInfoRow(String label, String val, {Color? valColor, bool isBold = false}) {
+  Widget _buildCardInfoRow(
+    String label,
+    String val, {
+    Color? valColor,
+    bool isBold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -604,7 +735,11 @@ class _TrackIpPageState extends State<TrackIpPage> {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           Expanded(

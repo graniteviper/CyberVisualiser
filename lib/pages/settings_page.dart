@@ -91,7 +91,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection settings and API keys saved.')),
+        const SnackBar(
+          content: Text('Connection settings and API keys saved.'),
+        ),
       );
     }
   }
@@ -108,17 +110,42 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Liquid Galaxy Settings', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'Liquid Galaxy Settings',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 16),
-            _buildTextField(label: 'IP address', controller: _ipController, hintText: 'e.g. 192.168.1.100'),
+            _buildTextField(
+              label: 'IP address',
+              controller: _ipController,
+              hintText: 'e.g. 192.168.1.100',
+            ),
             const SizedBox(height: 12),
-            _buildTextField(label: 'Port', controller: _portController, hintText: '22', keyboardType: TextInputType.number),
+            _buildTextField(
+              label: 'Port',
+              controller: _portController,
+              hintText: '22',
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 12),
-            _buildTextField(label: 'Username', controller: _usernameController, hintText: 'lg'),
+            _buildTextField(
+              label: 'Username',
+              controller: _usernameController,
+              hintText: 'lg',
+            ),
             const SizedBox(height: 12),
-            _buildTextField(label: 'Password', controller: _passwordController, obscureText: true),
+            _buildTextField(
+              label: 'Password',
+              controller: _passwordController,
+              obscureText: true,
+            ),
             const SizedBox(height: 12),
-            _buildTextField(label: 'Screens', controller: _screensController, hintText: '3', keyboardType: TextInputType.number),
+            _buildTextField(
+              label: 'Screens',
+              controller: _screensController,
+              hintText: '3',
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 16),
             Card(
               child: Padding(
@@ -126,16 +153,27 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('API Credentials', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'API Credentials',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 4),
                     const Text(
                       'Custom keys override defaults loaded from the assets/.env file',
                       style: TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(label: 'HoneyLabs API Key', controller: _honeyLabsKeyController, hintText: 'hlk_...'),
+                    _buildTextField(
+                      label: 'HoneyLabs API Key',
+                      controller: _honeyLabsKeyController,
+                      hintText: 'hlk_...',
+                    ),
                     const SizedBox(height: 12),
-                    _buildTextField(label: 'AbuseIPDB API Key', controller: _abuseIpDbKeyController, obscureText: true),
+                    _buildTextField(
+                      label: 'AbuseIPDB API Key',
+                      controller: _abuseIpDbKeyController,
+                      obscureText: true,
+                    ),
                   ],
                 ),
               ),
@@ -153,22 +191,28 @@ class _SettingsPageState extends State<SettingsPage> {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: service.isConnected ? Colors.green.withOpacity(0.2) : null,
+                      backgroundColor: service.isConnected
+                          ? Colors.green.withOpacity(0.2)
+                          : null,
                     ),
                     onPressed: () async {
                       if (service.isConnected) {
                         service.disconnect();
                       } else {
                         await service.connectToLG();
-                        final msg = service.isConnected ? 'Connected successfully' : 'Connection failed';
+                        final msg = service.isConnected
+                            ? 'Connected successfully'
+                            : 'Connection failed';
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(msg)),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(msg)));
                         }
                       }
                     },
-                    child: Text(service.isConnected ? 'Disconnect' : 'Connect to LG'),
+                    child: Text(
+                      service.isConnected ? 'Disconnect' : 'Connect to LG',
+                    ),
                   ),
                 ),
               ],
@@ -180,7 +224,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Rig Command Center', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Rig Command Center',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 4),
                     const Text(
                       'Direct actions to clean KML states and graphics overlays',
@@ -192,20 +239,35 @@ class _SettingsPageState extends State<SettingsPage> {
                         Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent.withOpacity(0.1),
+                              backgroundColor: Colors.redAccent.withOpacity(
+                                0.1,
+                              ),
                               foregroundColor: Colors.redAccent,
                               side: const BorderSide(color: Colors.redAccent),
                             ),
-                            icon: const Icon(Icons.delete_sweep_rounded, size: 16),
-                            label: const Text('Clear KML', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            icon: const Icon(
+                              Icons.delete_sweep_rounded,
+                              size: 16,
+                            ),
+                            label: const Text(
+                              'Clear KML',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             onPressed: service.isConnected
                                 ? () async {
                                     final success = await service.cleanKML();
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            success ? 'KML vectors cleared successfully.' : 'Failed to clear KMLs.',
+                                            success
+                                                ? 'KML vectors cleared successfully.'
+                                                : 'Failed to clear KMLs.',
                                           ),
                                         ),
                                       );
@@ -218,18 +280,37 @@ class _SettingsPageState extends State<SettingsPage> {
                         Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orangeAccent.withOpacity(0.1),
+                              backgroundColor: Colors.orangeAccent.withOpacity(
+                                0.1,
+                              ),
                               foregroundColor: Colors.orangeAccent,
-                              side: const BorderSide(color: Colors.orangeAccent),
+                              side: const BorderSide(
+                                color: Colors.orangeAccent,
+                              ),
                             ),
-                            icon: const Icon(Icons.layers_clear_rounded, size: 16),
-                            label: const Text('Clear Logos', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            icon: const Icon(
+                              Icons.layers_clear_rounded,
+                              size: 16,
+                            ),
+                            label: const Text(
+                              'Clear Logos',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             onPressed: service.isConnected
                                 ? () async {
                                     await service.cleanLogos();
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Overlays and logos cleared.')),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Overlays and logos cleared.',
+                                          ),
+                                        ),
                                       );
                                     }
                                   }
@@ -249,15 +330,27 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('App Theme', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'App Theme',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 8),
                     DropdownButton<ThemeMode>(
                       value: themeMode,
                       isExpanded: true,
                       items: const [
-                        DropdownMenuItem(value: ThemeMode.system, child: Text('System default')),
-                        DropdownMenuItem(value: ThemeMode.light, child: Text('Light mode')),
-                        DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark mode')),
+                        DropdownMenuItem(
+                          value: ThemeMode.system,
+                          child: Text('System default'),
+                        ),
+                        DropdownMenuItem(
+                          value: ThemeMode.light,
+                          child: Text('Light mode'),
+                        ),
+                        DropdownMenuItem(
+                          value: ThemeMode.dark,
+                          child: Text('Dark mode'),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -294,4 +387,3 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
-

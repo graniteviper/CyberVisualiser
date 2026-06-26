@@ -17,7 +17,9 @@ import 'package:cyber_visualiser/theme/theme_notifier.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('App renders home and settings navigation', (WidgetTester tester) async {
+  testWidgets('App renders home and settings navigation', (
+    WidgetTester tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
 
     final apiService = HoneyLabsService();
@@ -38,13 +40,17 @@ void main() {
             update: (_, lgService, __) => TrackIpLgService(lgService),
           ),
           ChangeNotifierProvider<AttackProvider>(
-            create: (_) => AttackProvider(repository)..stopPolling(), // Stop periodic timers in tests
+            create: (_) =>
+                AttackProvider(repository)
+                  ..stopPolling(), // Stop periodic timers in tests
           ),
           ChangeNotifierProvider<TrackIpProvider>(
             create: (_) => TrackIpProvider(trackRepository),
           ),
         ],
-        child: const MaterialApp(home: AppShell(autoInitializeConnection: false)),
+        child: const MaterialApp(
+          home: AppShell(autoInitializeConnection: false),
+        ),
       ),
     );
 

@@ -16,7 +16,8 @@ class TrackIpLgService {
     final dLon = (lon2 - lon1) * math.pi / 180;
 
     final y = math.sin(dLon) * math.cos(lat2Rad);
-    final x = math.cos(lat1Rad) * math.sin(lat2Rad) -
+    final x =
+        math.cos(lat1Rad) * math.sin(lat2Rad) -
         math.sin(lat1Rad) * math.cos(lat2Rad) * math.cos(dLon);
 
     final brng = math.atan2(y, x) * 180 / math.pi;
@@ -24,23 +25,39 @@ class TrackIpLgService {
   }
 
   // Helper to calculate distance in meters using Haversine formula
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     const r = 6371000; // Earth's radius in meters
     final dLat = (lat2 - lat1) * math.pi / 180;
     final dLon = (lon2 - lon1) * math.pi / 180;
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) *
-        math.sin(dLon / 2) * math.sin(dLon / 2);
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) *
+            math.cos(lat2 * math.pi / 180) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return r * c;
   }
 
   // Helper to generate 3D curved parabolic coordinate string
-  String _generateParabolicCoordinates(double sLat, double sLon, double tLat, double tLon) {
+  String _generateParabolicCoordinates(
+    double sLat,
+    double sLon,
+    double tLat,
+    double tLon,
+  ) {
     final List<String> coords = [];
     final steps = 30;
     final distance = _calculateDistance(sLat, sLon, tLat, tLon);
-    final double maxHeight = math.min(distance * 0.15, 1200000); // 15% of distance, capped at 1,200km
+    final double maxHeight = math.min(
+      distance * 0.15,
+      1200000,
+    ); // 15% of distance, capped at 1,200km
 
     for (int i = 0; i <= steps; i++) {
       final t = i / steps;
@@ -83,10 +100,11 @@ class TrackIpLgService {
       final severityColor = report.abuseConfidenceScore > 50
           ? '#ff4a5a'
           : report.abuseConfidenceScore > 20
-              ? '#ff9f43'
-              : '#1dd1a1';
+          ? '#ff9f43'
+          : '#1dd1a1';
 
-      final ipDescription = '''<description><![CDATA[
+      final ipDescription =
+          '''<description><![CDATA[
         <div style="font-family: 'Outfit', 'Segoe UI', Roboto, sans-serif; min-width: 300px; padding: 16px; background-color: #0f111a; color: #ffffff; border-radius: 12px; border: 1px solid #1e293b;">
           <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 16px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; letter-spacing: 0.5px;">TRACKED IP TELEMETRY</h3>
           <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
@@ -166,7 +184,8 @@ class TrackIpLgService {
           ''');
         }
 
-        final reporterDescription = '''<description><![CDATA[
+        final reporterDescription =
+            '''<description><![CDATA[
           <div style="font-family: 'Outfit', 'Segoe UI', Roboto, sans-serif; min-width: 320px; max-width: 400px; padding: 16px; background-color: #0f111a; color: #ffffff; border-radius: 12px; border: 1px solid #1e293b;">
             <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 16px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; letter-spacing: 0.5px;">REPORTER REGION: $countryName</h3>
             <p style="font-size: 13px; color: #94a3b8; margin-top: 0; margin-bottom: 12px;">This location submitted <b>${list.length}</b> report(s) against the source IP.</p>
@@ -188,7 +207,12 @@ class TrackIpLgService {
     </Placemark>''');
 
         // Draw parabolic curve (Attack Vector Line) from tracked IP (source) to reporter (victim target)
-        final lineCoords = _generateParabolicCoordinates(sLat, sLon, rLat, rLon);
+        final lineCoords = _generateParabolicCoordinates(
+          sLat,
+          sLon,
+          rLat,
+          rLon,
+        );
         placemarksBuffer.write('''
     <Placemark>
       <name>Vector Vector [#$lineId] to $countryCode</name>
@@ -206,7 +230,8 @@ class TrackIpLgService {
         lineId++;
       });
 
-      final kmlContent = '''<?xml version="1.0" encoding="UTF-8"?>
+      final kmlContent =
+          '''<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
   <Document>
     <name>Tracked IP Attack vectors</name>
@@ -242,22 +267,34 @@ class TrackIpLgService {
   </Document>
 </kml>''';
 
-      final uploadedName = await _lgService.uploadKml(kmlContent, 'track_ip.kml');
+      final uploadedName = await _lgService.uploadKml(
+        kmlContent,
+        'track_ip.kml',
+      );
       if (uploadedName != null) {
         await _lgService.query('slave_1=http://lg1:81/$uploadedName');
       }
 
       // Fly to the tracked IP source centered on the screen
       final bearing = reportsByCountry.isNotEmpty
-          ? _calculateBearing(sLat, sLon, reportsByCountry.values.first.first.reporterCountryCode.isNotEmpty
-              ? CountryCoordinatesLookup.getCoordinate(reportsByCountry.values.first.first.reporterCountryCode).latitude
-              : sLat + 15,
-            reportsByCountry.values.first.first.reporterCountryCode.isNotEmpty
-              ? CountryCoordinatesLookup.getCoordinate(reportsByCountry.values.first.first.reporterCountryCode).longitude
-              : sLon + 15)
+          ? _calculateBearing(
+              sLat,
+              sLon,
+              reportsByCountry.values.first.first.reporterCountryCode.isNotEmpty
+                  ? CountryCoordinatesLookup.getCoordinate(
+                      reportsByCountry.values.first.first.reporterCountryCode,
+                    ).latitude
+                  : sLat + 15,
+              reportsByCountry.values.first.first.reporterCountryCode.isNotEmpty
+                  ? CountryCoordinatesLookup.getCoordinate(
+                      reportsByCountry.values.first.first.reporterCountryCode,
+                    ).longitude
+                  : sLon + 15,
+            )
           : 0.0;
 
-      final lookAt = '''<LookAt>
+      final lookAt =
+          '''<LookAt>
           <longitude>$sLon</longitude>
           <latitude>$sLat</latitude>
           <altitude>0</altitude>
@@ -287,26 +324,33 @@ class TrackIpLgService {
     if (!_lgService.isConnected) return false;
 
     try {
-      final rightMost = _lgService.calculateRightMostScreen(_lgService.connectionModel.screens);
+      final rightMost = _lgService.calculateRightMostScreen(
+        _lgService.connectionModel.screens,
+      );
 
       final severityColor = report.abuseConfidenceScore > 50
           ? '#ff4a5a'
           : report.abuseConfidenceScore > 20
-              ? '#ff9f43'
-              : '#1dd1a1';
+          ? '#ff9f43'
+          : '#1dd1a1';
 
       final badgeText = report.abuseConfidenceScore > 50
           ? 'HIGH RISK'
           : report.abuseConfidenceScore > 20
-              ? 'MEDIUM RISK'
-              : 'LOW RISK';
+          ? 'MEDIUM RISK'
+          : 'LOW RISK';
 
       final safeIsp = report.isp.replaceAll("'", "\\'").replaceAll('"', '\\"');
-      final safeDomain = report.domain.replaceAll("'", "\\'").replaceAll('"', '\\"');
-      final safeCountry = report.countryName.replaceAll("'", "\\'").replaceAll('"', '\\"');
+      final safeDomain = report.domain
+          .replaceAll("'", "\\'")
+          .replaceAll('"', '\\"');
+      final safeCountry = report.countryName
+          .replaceAll("'", "\\'")
+          .replaceAll('"', '\\"');
 
       // 1. Generate the HTML card content
-      final htmlContent = """<!DOCTYPE html>
+      final htmlContent =
+          """<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -417,7 +461,8 @@ class TrackIpLgService {
 
       // 3. Render HTML to PNG via headless Google Chrome/Chromium screenshot on the master node
       // We run in headless mode with --no-sandbox to work inside the SSH session context
-      final chromeCommand = """
+      final chromeCommand =
+          """
 if command -v google-chrome &>/dev/null; then
   google-chrome --headless --no-sandbox --disable-gpu --screenshot=/var/www/html/$pngFileName --window-size=400,350 http://localhost:81/$htmlFileName
 elif command -v google-chrome-stable &>/dev/null; then
@@ -428,11 +473,15 @@ elif command -v chromium &>/dev/null; then
   chromium --headless --no-sandbox --disable-gpu --screenshot=/var/www/html/$pngFileName --window-size=400,350 http://localhost:81/$htmlFileName
 fi
 """;
-      final screenshotSuccess = await _lgService.execute(chromeCommand, 'Captured card screenshot successfully');
+      final screenshotSuccess = await _lgService.execute(
+        chromeCommand,
+        'Captured card screenshot successfully',
+      );
       if (!screenshotSuccess) return false;
 
       // 4. Generate the ScreenOverlay KML pointing to the generated PNG
-      final overlayKml = """<?xml version="1.0" encoding="UTF-8"?>
+      final overlayKml =
+          """<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <name>Track IP Overlay</name>
@@ -449,7 +498,10 @@ fi
 </kml>""";
 
       // 5. Write the overlay KML directly to Apache directory
-      final overlaySuccess = await _writeFileDirectly(overlayKml, overlayKmlName);
+      final overlaySuccess = await _writeFileDirectly(
+        overlayKml,
+        overlayKmlName,
+      );
       if (!overlaySuccess) return false;
 
       // 6. Query the rightmost screen to point to this overlay KML
@@ -469,7 +521,9 @@ fi
     if (!_lgService.isConnected) return false;
 
     try {
-      final rightMost = _lgService.calculateRightMostScreen(_lgService.connectionModel.screens);
+      final rightMost = _lgService.calculateRightMostScreen(
+        _lgService.connectionModel.screens,
+      );
 
       const blankKml = """<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">

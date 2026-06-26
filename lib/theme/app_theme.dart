@@ -9,9 +9,7 @@ class AppTheme {
       scaffoldBackgroundColor: Colors.grey.shade50,
       appBarTheme: const AppBarTheme(centerTitle: true),
       elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
-        ),
+        style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
       ),
     );
   }
@@ -20,13 +18,14 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, brightness: Brightness.dark),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.indigo,
+        brightness: Brightness.dark,
+      ),
       scaffoldBackgroundColor: Colors.black,
       appBarTheme: const AppBarTheme(centerTitle: true),
       elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
-        ),
+        style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
       ),
     );
   }

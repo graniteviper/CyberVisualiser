@@ -101,7 +101,8 @@ class AbuseIpReport {
   });
 
   factory AbuseIpReport.fromJson(Map<String, dynamic> json) {
-    final reportsList = (json['reports'] as List?)
+    final reportsList =
+        (json['reports'] as List?)
             ?.map((e) => AbuseReportItem.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
