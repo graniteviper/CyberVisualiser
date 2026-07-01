@@ -5,6 +5,7 @@ import 'services/lg_adapter.dart';
 import 'services/honeylabs_service.dart';
 import 'services/abuseipdb_service.dart';
 import 'services/track_ip_lg_service.dart';
+import 'services/gemini_service.dart';
 import 'repositories/attack_repository.dart';
 import 'repositories/track_ip_repository.dart';
 import 'providers/attack_provider.dart';
@@ -41,6 +42,7 @@ void main() async {
         ProxyProvider<LgService, TrackIpLgService>(
           update: (_, lgService, __) => TrackIpLgService(lgService),
         ),
+        Provider<GeminiService>(create: (_) => GeminiService()),
         ChangeNotifierProvider<AttackProvider>(
           create: (_) => AttackProvider(repository),
         ),

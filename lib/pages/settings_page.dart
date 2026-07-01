@@ -19,6 +19,7 @@ class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _screensController;
   late final TextEditingController _honeyLabsKeyController;
   late final TextEditingController _abuseIpDbKeyController;
+  late final TextEditingController _geminiKeyController;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _screensController = TextEditingController();
     _honeyLabsKeyController = TextEditingController();
     _abuseIpDbKeyController = TextEditingController();
+    _geminiKeyController = TextEditingController();
   }
 
   @override
@@ -43,6 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _screensController.text = connection.screens.toString();
     _honeyLabsKeyController.text = AppConfig.userApiKey;
     _abuseIpDbKeyController.text = AppConfig.userAbuseIpDbApiKey;
+    _geminiKeyController.text = AppConfig.userGeminiApiKey;
   }
 
   @override
@@ -54,6 +57,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _screensController.dispose();
     _honeyLabsKeyController.dispose();
     _abuseIpDbKeyController.dispose();
+    _geminiKeyController.dispose();
     super.dispose();
   }
 
@@ -87,7 +91,8 @@ class _SettingsPageState extends State<SettingsPage> {
     // Save custom user API keys
     final honeyKey = _honeyLabsKeyController.text.trim();
     final abuseKey = _abuseIpDbKeyController.text.trim();
-    await AppConfig.saveUserKeys(honeyKey, abuseKey);
+    final geminiKey = _geminiKeyController.text.trim();
+    await AppConfig.saveUserKeys(honeyKey, abuseKey, geminiKey);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -184,6 +189,12 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildTextField(
                       label: 'AbuseIPDB API Key',
                       controller: _abuseIpDbKeyController,
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTextField(
+                      label: 'Gemini API Key',
+                      controller: _geminiKeyController,
                       obscureText: true,
                     ),
                   ],

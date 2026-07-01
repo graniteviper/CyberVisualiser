@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/track_ip_provider.dart';
 import '../services/lg_service.dart';
 import '../services/track_ip_lg_service.dart';
+import '../services/gemini_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class TrackIpPage extends StatefulWidget {
   const TrackIpPage({super.key});
@@ -48,6 +50,29 @@ class _TrackIpPageState extends State<TrackIpPage> {
         maxAgeInDays: _maxAgeInDays.toInt(),
         lgService: lgService,
       );
+    }
+  }
+
+  void _submitGeminiAnalysis(
+    TrackIpProvider provider,
+    TrackIpLgService lgService,
+    GeminiService geminiService,
+  ) {
+    if (_formKey.currentState!.validate()) {
+      FocusScope.of(context).unfocus();
+      final ipAddress = _ipController.text.trim();
+      final maxAge = _maxAgeInDays.toInt();
+
+      if (provider.report != null && provider.report!.ipAddress == ipAddress) {
+        provider.analyzeWithGemini(geminiService);
+      } else {
+        provider.trackAndAnalyze(
+          ipAddress: ipAddress,
+          maxAgeInDays: maxAge,
+          geminiService: geminiService,
+          lgService: lgService,
+        );
+      }
     }
   }
 
@@ -352,6 +377,40 @@ class _TrackIpPageState extends State<TrackIpPage> {
                   ],
                 ],
               ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: isDark
+                      ? Colors.teal.shade900
+                      : Colors.teal.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: (provider.isLoading || provider.isAnalyzing)
+                    ? null
+                    : () => _submitGeminiAnalysis(
+                        provider,
+                        trackLgService,
+                        context.read<GeminiService>(),
+                      ),
+                icon: provider.isAnalyzing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.psychology_rounded),
+                label: const Text(
+                  'Analyse with Gemini',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
         ),
@@ -582,6 +641,138 @@ class _TrackIpPageState extends State<TrackIpPage> {
             ),
           ),
         ),
+        if (provider.isAnalyzing)
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.only(top: 16.0),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Gemini is analyzing IP threat intelligence...',
+                    style: TextStyle(
+                      color: isDark ? Colors.cyanAccent : Colors.indigo,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else if (provider.geminiError != null)
+          Card(
+            color: Colors.red.shade900.withOpacity(0.15),
+            margin: const EdgeInsets.only(top: 16.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: Colors.red.shade900.withOpacity(0.3)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Gemini Analysis Failed',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    provider.geminiError!,
+                    style: TextStyle(color: Colors.red.shade200, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else if (provider.geminiSummary != null)
+          Card(
+            elevation: 4,
+            color: isDark
+                ? const Color(0xFF131622)
+                : Colors.teal.shade50.withValues(alpha: 0.2),
+            margin: const EdgeInsets.only(top: 16.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: isDark ? Colors.teal.shade900 : Colors.teal.shade200,
+                width: 1.5,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.teal.shade900.withValues(alpha: 0.4)
+                          : Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.teal.shade800
+                            : Colors.teal.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.psychology_rounded,
+                          color: isDark
+                              ? Colors.teal.shade300
+                              : Colors.teal.shade800,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'GEMINI AI THREAT REPORT',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: isDark
+                                ? Colors.teal.shade300
+                                : Colors.teal.shade800,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 20, color: Colors.transparent),
+                  GeminiReportRenderer(text: provider.geminiSummary!),
+                ],
+              ),
+            ),
+          ),
         const SizedBox(height: 20),
         Text(
           'THREAT LOG DETAILS (${report.reports.length})',
@@ -761,6 +952,58 @@ class _TrackIpPageState extends State<TrackIpPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class GeminiReportRenderer extends StatelessWidget {
+  final String text;
+
+  const GeminiReportRenderer({super.key, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final baseStyleSheet = MarkdownStyleSheet.fromTheme(Theme.of(context));
+
+    return MarkdownBody(
+      data: text,
+      selectable: true,
+      styleSheet: baseStyleSheet.copyWith(
+        p: baseStyleSheet.p?.copyWith(
+          color: isDark ? Colors.grey.shade300 : Colors.black87,
+          fontSize: 13,
+          height: 1.5,
+        ),
+        h1: baseStyleSheet.h1?.copyWith(
+          color: isDark ? Colors.teal.shade200 : Colors.teal.shade800,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+        h2: baseStyleSheet.h2?.copyWith(
+          color: isDark ? Colors.blue.shade200 : Colors.indigo.shade800,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+        h3: baseStyleSheet.h3?.copyWith(
+          color: isDark ? Colors.blue.shade200 : Colors.indigo.shade800,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+        ),
+        listBullet: baseStyleSheet.listBullet?.copyWith(
+          color: isDark ? Colors.teal.shade300 : Colors.teal.shade700,
+          fontSize: 13,
+        ),
+        strong: baseStyleSheet.strong?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white : Colors.black,
+        ),
+        h1Padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+        h2Padding: const EdgeInsets.only(top: 14.0, bottom: 6.0),
+        h3Padding: const EdgeInsets.only(top: 12.0, bottom: 4.0),
+        listIndent: 20.0,
       ),
     );
   }

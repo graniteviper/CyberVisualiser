@@ -156,17 +156,24 @@ void main() {
     test('Should save user keys to preferences and update fields', () async {
       SharedPreferences.setMockInitialValues({});
 
-      await AppConfig.saveUserKeys('new-user-hl-key', 'new-user-abuse-key');
+      await AppConfig.saveUserKeys(
+        'new-user-hl-key',
+        'new-user-abuse-key',
+        'new-user-gemini-key',
+      );
 
       expect(AppConfig.userApiKey, 'new-user-hl-key');
       expect(AppConfig.userAbuseIpDbApiKey, 'new-user-abuse-key');
+      expect(AppConfig.userGeminiApiKey, 'new-user-gemini-key');
       expect(AppConfig.apiKey, 'new-user-hl-key');
       expect(AppConfig.abuseIpDbApiKey, 'new-user-abuse-key');
+      expect(AppConfig.geminiApiKey, 'new-user-gemini-key');
 
       // Verify stored keys in mock prefs
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('user_honeylabs_api_key'), 'new-user-hl-key');
       expect(prefs.getString('user_abuseipdb_api_key'), 'new-user-abuse-key');
+      expect(prefs.getString('user_gemini_api_key'), 'new-user-gemini-key');
     });
   });
 
