@@ -110,9 +110,21 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Liquid Galaxy Settings',
-              style: Theme.of(context).textTheme.headlineSmall,
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.menu),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  tooltip: 'Open navigation drawer',
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Liquid Galaxy Settings',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             _buildTextField(

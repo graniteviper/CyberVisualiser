@@ -67,5 +67,19 @@ void main() {
 
     // Verify it navigates to settings screen
     expect(find.text('Liquid Galaxy Settings'), findsOneWidget);
+
+    // Tap on the drawer hamburger menu button to open drawer
+    await tester.tap(find.byIcon(Icons.menu).first);
+    await tester.pumpAndSettle();
+
+    // Verify drawer header is shown
+    expect(find.text('Cyber Threat Intelligence'), findsOneWidget);
+
+    // Tap on the Track IP item inside the drawer to navigate
+    await tester.tap(find.text('Track IP').last);
+    await tester.pumpAndSettle();
+
+    // Verify it navigates to the Track IP screen
+    expect(find.text('IP TRACKER'), findsOneWidget);
   });
 }
