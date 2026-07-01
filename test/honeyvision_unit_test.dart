@@ -174,7 +174,10 @@ void main() {
     test('Should classify SSH attacks correctly', () {
       final e1 = AttackEvent.fromJson({'dest_port': 22});
       final e2 = AttackEvent.fromJson({'network_protocol': 'ssh'});
-      final e3 = AttackEvent.fromJson({'http_method': 'GET', 'url_path': '/ssh-login'});
+      final e3 = AttackEvent.fromJson({
+        'http_method': 'GET',
+        'url_path': '/ssh-login',
+      });
 
       expect(e1.attackCategory, 'SSH attacks');
       expect(e2.attackCategory, 'SSH attacks');
@@ -184,7 +187,10 @@ void main() {
     test('Should classify DDOS attacks correctly', () {
       final e1 = AttackEvent.fromJson({'network_protocol': 'udp'});
       final e2 = AttackEvent.fromJson({'network_protocol': 'icmp'});
-      final e3 = AttackEvent.fromJson({'http_method': 'GET', 'url_path': '/ddos-test'});
+      final e3 = AttackEvent.fromJson({
+        'http_method': 'GET',
+        'url_path': '/ddos-test',
+      });
 
       expect(e1.attackCategory, 'DDOS attacks');
       expect(e2.attackCategory, 'DDOS attacks');
@@ -194,7 +200,10 @@ void main() {
     test('Should classify brute force attacks correctly', () {
       final e1 = AttackEvent.fromJson({'dest_port': 23}); // Telnet
       final e2 = AttackEvent.fromJson({'dest_port': 3389}); // RDP
-      final e3 = AttackEvent.fromJson({'http_method': 'POST', 'url_path': '/wp-login.php'});
+      final e3 = AttackEvent.fromJson({
+        'http_method': 'POST',
+        'url_path': '/wp-login.php',
+      });
 
       expect(e1.attackCategory, 'brute force');
       expect(e2.attackCategory, 'brute force');
@@ -203,8 +212,14 @@ void main() {
 
     test('Should classify malware attacks correctly', () {
       final e1 = AttackEvent.fromJson({'user_agent': 'mirai-botnet'});
-      final e2 = AttackEvent.fromJson({'http_method': 'GET', 'url_path': '/setup.sh'});
-      final e3 = AttackEvent.fromJson({'http_method': 'GET', 'url_path': '/payload.exe'});
+      final e2 = AttackEvent.fromJson({
+        'http_method': 'GET',
+        'url_path': '/setup.sh',
+      });
+      final e3 = AttackEvent.fromJson({
+        'http_method': 'GET',
+        'url_path': '/payload.exe',
+      });
 
       expect(e1.attackCategory, 'malware');
       expect(e2.attackCategory, 'malware');
@@ -212,7 +227,10 @@ void main() {
     });
 
     test('Should classify other attacks correctly', () {
-      final e1 = AttackEvent.fromJson({'dest_port': 80, 'network_protocol': 'tcp'});
+      final e1 = AttackEvent.fromJson({
+        'dest_port': 80,
+        'network_protocol': 'tcp',
+      });
       expect(e1.attackCategory, 'other');
     });
 

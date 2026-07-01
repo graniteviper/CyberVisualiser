@@ -803,7 +803,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? Colors.blue.shade900.withOpacity(0.4)
@@ -828,7 +831,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Center(
                       child: Text(
                         'No $category detected.',
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   )
@@ -863,11 +869,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             backgroundColor: sevColor.withOpacity(0.15),
                             radius: 18,
                             child: Text(
-                              event.countryCode.isNotEmpty ? event.countryCode : '?',
+                              event.countryCode.isNotEmpty
+                                  ? event.countryCode
+                                  : '?',
                               style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: sevColor),
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: sevColor,
+                              ),
                             ),
                           ),
                           title: Row(
@@ -945,7 +954,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     tooltip: 'Project vector on LG',
                                     onPressed: lgService.isConnected
                                         ? () => _triggerVisualisation(
-                                            context, event, adapter)
+                                            context,
+                                            event,
+                                            adapter,
+                                          )
                                         : null,
                                   ),
                                   const Icon(
