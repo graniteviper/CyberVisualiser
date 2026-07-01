@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import '../models/abuse_report_model.dart';
 import '../repositories/track_ip_repository.dart';
 import '../services/track_ip_lg_service.dart';
+import '../services/gemini_service.dart';
+import '../templates/gemini_prompt_template.dart';
 
 class TrackIpProvider extends ChangeNotifier {
   final TrackIpRepository _repository;
@@ -11,10 +13,18 @@ class TrackIpProvider extends ChangeNotifier {
   AbuseIpReport? _report;
   bool _isVisualized = false;
 
+  bool _isAnalyzing = false;
+  String? _geminiSummary;
+  String? _geminiError;
+
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   AbuseIpReport? get report => _report;
   bool get isVisualized => _isVisualized;
+
+  bool get isAnalyzing => _isAnalyzing;
+  String? get geminiSummary => _geminiSummary;
+  String? get geminiError => _geminiError;
 
   TrackIpProvider(this._repository);
 
@@ -28,6 +38,8 @@ class TrackIpProvider extends ChangeNotifier {
     _errorMessage = null;
     _report = null;
     _isVisualized = false;
+    _geminiSummary = null;
+    _geminiError = null;
     notifyListeners();
 
     try {
@@ -44,6 +56,54 @@ class TrackIpProvider extends ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Performs Gemini Threat Analysis on the current report
+  Future<void> analyzeWithGemini(GeminiService geminiService) async {
+    if (_report == null) {
+      _geminiError = 'No active threat report available to analyze.';
+      notifyListeners();
+      return;
+    }
+
+    _isAnalyzing = true;
+    _geminiError = null;
+    _geminiSummary = null;
+    notifyListeners();
+
+    try {
+      final prompt = GeminiPromptTemplate.fillAttackAnalysisTemplate(_report!);
+      final summary = await geminiService.generateThreatSummary(prompt);
+      _geminiSummary = summary;
+      _geminiError = null;
+    } catch (e) {
+      debugPrint('HoneyVision Gemini Analysis Error: $e');
+      _geminiError = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isAnalyzing = false;
+      notifyListeners();
+    }
+  }
+
+  /// Does BOTH tracking and Gemini analysis in one single operation
+  Future<void> trackAndAnalyze({
+    required String ipAddress,
+    required int maxAgeInDays,
+    required GeminiService geminiService,
+    TrackIpLgService? lgService,
+  }) async {
+    await fetchIpDetails(
+      ipAddress: ipAddress,
+      maxAgeInDays: maxAgeInDays,
+      lgService: lgService,
+    );
+
+    if (_errorMessage == null && _report != null) {
+      await analyzeWithGemini(geminiService);
+    } else {
+      _geminiError = 'Could not fetch IP details to perform analysis.';
       notifyListeners();
     }
   }
@@ -94,6 +154,9 @@ class TrackIpProvider extends ChangeNotifier {
     _errorMessage = null;
     _isLoading = false;
     _isVisualized = false;
+    _isAnalyzing = false;
+    _geminiSummary = null;
+    _geminiError = null;
     notifyListeners();
   }
 }
