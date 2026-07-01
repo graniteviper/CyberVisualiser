@@ -116,6 +116,14 @@ class _TrackIpPageState extends State<TrackIpPage> {
       ),
       child: Row(
         children: [
+          IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'Open navigation drawer',
+          ),
+          const SizedBox(width: 12),
           Icon(
             Icons.location_on_rounded,
             color: isDark ? Colors.cyanAccent : Colors.amberAccent,
