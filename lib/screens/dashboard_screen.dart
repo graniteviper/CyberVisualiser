@@ -18,6 +18,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late final TextEditingController _targetLatController;
   late final TextEditingController _targetLonController;
   bool _showTargetSettings = false;
+  String _selectedCategory = 'All';
 
   @override
   void initState() {
@@ -636,6 +637,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'DDOS attacks':
+        return Icons.waves;
+      case 'SSH attacks':
+        return Icons.terminal;
+      case 'malware':
+        return Icons.bug_report;
+      case 'brute force':
+        return Icons.lock_open;
+      default:
+        return Icons.security;
+    }
+  }
+
   Widget _buildEventsStream(
     AttackProvider provider,
     LgService lgService,
@@ -753,117 +769,221 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: provider.events.length,
-      itemBuilder: (context, index) {
-        final event = provider.events[index];
-        final sevColor = _getSeverityColor(event.severity);
+    final groupedEvents = provider.getGroupedEvents();
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: AttackProvider.categories.map((category) {
+        final attacks = groupedEvents[category] ?? [];
         return Card(
           elevation: 2,
-          margin: const EdgeInsets.only(bottom: 10.0),
+          margin: const EdgeInsets.only(bottom: 12.0),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(color: sevColor.withOpacity(0.4), width: 1),
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade300,
+            ),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 4,
-            ),
-            leading: CircleAvatar(
-              backgroundColor: sevColor.withOpacity(0.15),
-              radius: 18,
-              child: Text(
-                event.countryCode.isNotEmpty ? event.countryCode : '?',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: sevColor,
-                ),
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              leading: Icon(
+                _getCategoryIcon(category),
+                color: isDark ? Colors.blue.shade200 : Colors.indigo,
               ),
-            ),
-            title: Row(
-              children: [
-                Text(
-                  event.sourceIp,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 1.5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: sevColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    event.severity.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 8,
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    category.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: sevColor,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                ),
-              ],
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Origin: ${event.cityName.isNotEmpty ? "${event.cityName}, " : ""}${event.countryName.isNotEmpty ? event.countryName : "Unknown Country"}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                ),
-                Text(
-                  'ASN: AS${event.asnNumber} (${event.asnOrg})',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  'Vector: ${event.displayTitle} -> Port ${event.destPort}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.send_rounded,
-                        color: lgService.isConnected ? sevColor : Colors.grey,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.blue.shade900.withOpacity(0.4)
+                          : Colors.indigo.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${attacks.length}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.cyanAccent : Colors.indigo,
                       ),
-                      tooltip: 'Project vector on LG',
-                      onPressed: lgService.isConnected
-                          ? () => _triggerVisualisation(context, event, adapter)
-                          : null,
                     ),
-                    const Icon(Icons.chevron_right, color: Colors.grey),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+              children: [
+                if (attacks.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
+                    child: Center(
+                      child: Text(
+                        'No $category detected.',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: attacks.length,
+                    itemBuilder: (context, index) {
+                      final event = attacks[index];
+                      final sevColor = _getSeverityColor(event.severity);
+
+                      return Card(
+                        elevation: 1,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 6.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(
+                            color: sevColor.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: sevColor.withOpacity(0.15),
+                            radius: 18,
+                            child: Text(
+                              event.countryCode.isNotEmpty
+                                  ? event.countryCode
+                                  : '?',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: sevColor,
+                              ),
+                            ),
+                          ),
+                          title: Row(
+                            children: [
+                              Text(
+                                event.sourceIp,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: sevColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  event.severity.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: sevColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Origin: ${event.cityName.isNotEmpty ? "${event.cityName}, " : ""}${event.countryName.isNotEmpty ? event.countryName : "Unknown Country"}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Text(
+                                'ASN: AS${event.asnNumber} (${event.asnOrg})',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Vector: ${event.displayTitle} -> Port ${event.destPort}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.send_rounded,
+                                      color: lgService.isConnected
+                                          ? sevColor
+                                          : Colors.grey,
+                                    ),
+                                    tooltip: 'Project vector on LG',
+                                    onPressed: lgService.isConnected
+                                        ? () => _triggerVisualisation(
+                                            context,
+                                            event,
+                                            adapter,
+                                          )
+                                        : null,
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          onTap: () => _showDetails(
+                            context,
+                            event,
+                            adapter,
+                            lgService.isConnected,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                const SizedBox(height: 8),
               ],
             ),
-            onTap: () =>
-                _showDetails(context, event, adapter, lgService.isConnected),
           ),
         );
-      },
+      }).toList(),
     );
   }
 }

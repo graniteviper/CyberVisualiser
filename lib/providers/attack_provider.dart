@@ -106,6 +106,35 @@ class AttackProvider extends ChangeNotifier {
     return await adapter.visualizeOnLG(event);
   }
 
+  /// List of distinct attack categories supported by the application
+  static const List<String> categories = [
+    'DDOS attacks',
+    'SSH attacks',
+    'malware',
+    'brute force',
+    'other',
+  ];
+
+  /// Groups currently fetched events by their categorized type
+  Map<String, List<AttackEvent>> getGroupedEvents() {
+    final Map<String, List<AttackEvent>> groups = {
+      'DDOS attacks': [],
+      'SSH attacks': [],
+      'malware': [],
+      'brute force': [],
+      'other': [],
+    };
+    for (final event in _events) {
+      final category = event.attackCategory;
+      if (groups.containsKey(category)) {
+        groups[category]!.add(event);
+      } else {
+        groups['other']!.add(event);
+      }
+    }
+    return groups;
+  }
+
   @override
   void dispose() {
     stopPolling();

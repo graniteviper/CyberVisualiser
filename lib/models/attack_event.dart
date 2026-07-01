@@ -119,4 +119,50 @@ class AttackEvent {
     }
     return 'Probe on port $destPort';
   }
+
+  /// Categorizes this attack event into one of the 5 categories
+  String get attackCategory {
+    final title = displayTitle.toLowerCase();
+    final protocol = networkProtocol.toLowerCase();
+    final url = urlPath.toLowerCase();
+    final userAgentStr = userAgent.toLowerCase();
+
+    // 1. SSH attacks
+    if (destPort == 22 || protocol.contains('ssh') || title.contains('ssh')) {
+      return 'SSH attacks';
+    }
+
+    // 2. DDOS attacks
+    if (title.contains('ddos') ||
+        url.contains('ddos') ||
+        protocol == 'udp' ||
+        protocol == 'icmp') {
+      return 'DDOS attacks';
+    }
+
+    // 3. brute force
+    if (title.contains('brute') ||
+        title.contains('force') ||
+        destPort == 23 || // Telnet
+        destPort == 3389 || // RDP
+        url.contains('login') ||
+        url.contains('wp-login') ||
+        url.contains('admin')) {
+      return 'brute force';
+    }
+
+    // 4. malware
+    if (title.contains('malware') ||
+        url.contains('.sh') ||
+        url.contains('.exe') ||
+        url.contains('.php') ||
+        url.contains('/bin/') ||
+        userAgentStr.contains('mirai') ||
+        userAgentStr.contains('malware')) {
+      return 'malware';
+    }
+
+    // 5. other
+    return 'other';
+  }
 }
