@@ -58,17 +58,23 @@ void main() {
 
     // Verify Dashboard signature
     expect(find.text('Liquid Galaxy Dashboard'), findsOneWidget);
+
+    // Tap on the drawer hamburger menu button to open drawer
+    await tester.tap(find.byIcon(Icons.menu).first);
+    await tester.pumpAndSettle();
+
+    // Verify icons inside the open drawer
     expect(find.byIcon(Icons.dashboard_rounded), findsOneWidget);
     expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
 
-    // Tap on Connection Settings tab
+    // Tap on Connection Settings in the drawer
     await tester.tap(find.text('Connection Settings'));
     await tester.pumpAndSettle();
 
     // Verify it navigates to settings screen
     expect(find.text('Liquid Galaxy Settings'), findsOneWidget);
 
-    // Tap on the drawer hamburger menu button to open drawer
+    // Tap on the drawer hamburger menu button to open drawer again
     await tester.tap(find.byIcon(Icons.menu).first);
     await tester.pumpAndSettle();
 

@@ -889,12 +889,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           title: Row(
                             children: [
-                              Text(
-                                event.sourceIp,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  fontFamily: 'monospace',
+                              Flexible(
+                                child: Text(
+                                  event.sourceIp,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    fontFamily: 'monospace',
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -953,6 +956,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
                                     icon: Icon(
                                       Icons.send_rounded,
                                       color: lgService.isConnected
@@ -968,6 +973,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           )
                                         : null,
                                   ),
+                                  const SizedBox(width: 4),
                                   const Icon(
                                     Icons.chevron_right,
                                     color: Colors.grey,
