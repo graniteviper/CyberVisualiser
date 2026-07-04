@@ -5,6 +5,8 @@ import '../providers/attack_provider.dart';
 import '../services/lg_service.dart';
 import '../services/lg_adapter.dart';
 import '../widgets/event_details_panel.dart';
+import '../widgets/gemini_summary_dialog.dart';
+import '../services/gemini_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -99,6 +101,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         lgAdapter: adapter,
         isLgConnected: isLgConnected,
         onVisualize: (evt) => _triggerVisualisation(context, evt, adapter),
+      ),
+    );
+  }
+
+  void _showGeminiCategorySummary(
+    BuildContext context,
+    String category,
+    List<AttackEvent> events,
+  ) {
+    final geminiService = context.read<GeminiService>();
+    showDialog(
+      context: context,
+      builder: (context) => GeminiSummaryDialog(
+        category: category,
+        events: events,
+        geminiService: geminiService,
       ),
     );
   }
@@ -846,7 +864,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   )
-                else
+                else ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark
+                            ? Colors.cyan.shade900.withOpacity(0.3)
+                            : Colors.indigo.shade50,
+                        foregroundColor: isDark
+                            ? Colors.cyanAccent
+                            : Colors.indigo,
+                        side: BorderSide(
+                          color: isDark
+                              ? Colors.cyanAccent.withOpacity(0.3)
+                              : Colors.indigo.shade200,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        minimumSize: const Size.fromHeight(40),
+                      ),
+                      icon: const Icon(Icons.psychology, size: 18),
+                      label: Text(
+                        'Get Insights using Gemini for ${category.toUpperCase()}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: () => _showGeminiCategorySummary(
+                        context,
+                        category,
+                        attacks,
+                      ),
+                    ),
+                  ),
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -889,12 +945,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           title: Row(
                             children: [
-                              Text(
-                                event.sourceIp,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  fontFamily: 'monospace',
+                              Flexible(
+                                child: Text(
+                                  event.sourceIp,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    fontFamily: 'monospace',
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -953,6 +1012,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
                                     icon: Icon(
                                       Icons.send_rounded,
                                       color: lgService.isConnected
@@ -968,6 +1029,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           )
                                         : null,
                                   ),
+                                  const SizedBox(width: 4),
                                   const Icon(
                                     Icons.chevron_right,
                                     color: Colors.grey,
@@ -986,7 +1048,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
                     },
                   ),
-                const SizedBox(height: 8),
+                  const SizedBox(height: 8),
+                ],
               ],
             ),
           ),

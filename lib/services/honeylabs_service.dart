@@ -8,7 +8,7 @@ class HoneyLabsService {
   Future<List<Map<String, dynamic>>> fetchRawEvents({
     required DateTime since,
     required DateTime until,
-    int limit = 100,
+    int limit = 10,
   }) async {
     final apiKey = AppConfig.apiKey;
     if (apiKey.isEmpty) {
