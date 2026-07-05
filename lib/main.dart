@@ -15,6 +15,7 @@ import 'theme/app_theme.dart';
 import 'screens/dashboard_screen.dart';
 import 'pages/settings_page.dart';
 import 'pages/track_ip_page.dart';
+import 'pages/simulate_attack_page.dart';
 import 'utils/config.dart';
 
 void main() async {
@@ -88,6 +89,7 @@ class _AppShellState extends State<AppShell> {
     DashboardScreen(),
     SettingsPage(),
     TrackIpPage(),
+    SimulateAttackPage(),
   ];
 
   @override
@@ -233,6 +235,12 @@ class _AppShellState extends State<AppShell> {
                     icon: Icons.location_on_rounded,
                     title: 'Track IP',
                     index: 2,
+                    isDark: isDark,
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.psychology_outlined,
+                    title: 'Attack Simulator',
+                    index: 3,
                     isDark: isDark,
                   ),
                 ],

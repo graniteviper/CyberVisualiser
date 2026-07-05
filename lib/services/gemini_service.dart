@@ -30,7 +30,7 @@ class GeminiService {
             ],
           }),
         )
-        .timeout(const Duration(seconds: 30));
+        .timeout(const Duration(seconds: 120));
 
     if (response.statusCode != 200) {
       throw Exception(

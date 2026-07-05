@@ -81,4 +81,48 @@ class LgAdapter {
       return false;
     }
   }
+
+  /// Projects all attack events in a list onto the Liquid Galaxy at once
+  Future<bool> visualizeMultipleOnLG(List<AttackEvent> events) async {
+    if (!_lgService.isConnected) {
+      debugPrint('HoneyVision LG Adapter: Liquid Galaxy is not connected.');
+      return false;
+    }
+
+    try {
+      final List<ActiveAttack> activeAttacks = [];
+      for (final event in events) {
+        final sourceCoord = CountryCoordinatesLookup.getCoordinate(
+          event.countryCode,
+        );
+        activeAttacks.add(
+          ActiveAttack(
+            attackName: event.displayTitle,
+            sourceCountry: event.countryName.isNotEmpty
+                ? event.countryName
+                : event.countryCode,
+            sourceLat: sourceCoord.latitude,
+            sourceLon: sourceCoord.longitude,
+            targetCountry: _targetCountry,
+            targetLat: _targetLat,
+            targetLon: _targetLon,
+            severity: event.severity,
+          ),
+        );
+      }
+
+      await _lgService.sendMultipleCyberAttacksKML(
+        activeAttacks,
+        targetLat: _targetLat,
+        targetLon: _targetLon,
+      );
+
+      return true;
+    } catch (e) {
+      debugPrint(
+        'HoneyVision LG Adapter Error: Failed to send multiple KML visualizations: $e',
+      );
+      return false;
+    }
+  }
 }
