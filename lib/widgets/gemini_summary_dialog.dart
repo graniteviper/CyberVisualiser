@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:provider/provider.dart';
 import '../models/attack_event.dart';
 import '../services/gemini_service.dart';
 import '../services/gemini_analysis_helper.dart';
+import '../services/lg_service.dart';
 
 class GeminiSummaryDialog extends StatefulWidget {
   final String category;
@@ -48,6 +50,21 @@ class _GeminiSummaryDialogState extends State<GeminiSummaryDialog> {
           _summaryText = summary;
           _isLoading = false;
         });
+
+        // Query LgService to send insights overlay popup to rightmost screen
+        final lgService = context.read<LgService>();
+        if (lgService.isConnected) {
+          lgService
+              .sendCategoryInsightsOverlay(
+                category: widget.category,
+                markdownText: summary,
+              )
+              .catchError((e) {
+                debugPrint(
+                  'Failed to send category insights overlay to LG: $e',
+                );
+              });
+        }
       }
     } catch (e) {
       if (mounted) {

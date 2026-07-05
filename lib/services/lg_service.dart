@@ -2191,7 +2191,7 @@ class LgService extends ChangeNotifier {
     }
 
     try {
-      // Add the current attack to active attacks list
+      // Add the current attack to active attacks list without any cap limit
       _activeAttacks.add(
         ActiveAttack(
           attackName: attackName,
@@ -2205,92 +2205,173 @@ class LgService extends ChangeNotifier {
         ),
       );
 
-      // Limit to 15 active attacks to keep screens clean
-      if (_activeAttacks.length > 15) {
-        _activeAttacks.removeAt(0);
+      await _uploadCyberAttackKML(
+        flyToLat: targetLat,
+        flyToLon: targetLon,
+        calculateBearingFromFirst: true,
+      );
+    } catch (e) {
+      debugPrint('Error sending cyber attack KML: $e');
+    }
+  }
+
+  // -------- sendMultipleCyberAttacksKML() method --------
+  // Sends multiple cyber attacks at once, replacing any currently visualised attacks
+  Future<void> sendMultipleCyberAttacksKML(
+    List<ActiveAttack> attacks, {
+    required double targetLat,
+    required double targetLon,
+  }) async {
+    if (_client == null) {
+      debugPrint('SSH client not connected');
+      return;
+    }
+
+    try {
+      _activeAttacks.clear();
+      _activeAttacks.addAll(attacks);
+
+      await _uploadCyberAttackKML(
+        flyToLat: targetLat,
+        flyToLon: targetLon,
+        calculateBearingFromFirst: false,
+      );
+    } catch (e) {
+      debugPrint('Error sending multiple cyber attacks KML: $e');
+    }
+  }
+
+  // Helper method to build, group and upload cyber attack KMLs
+  Future<void> _uploadCyberAttackKML({
+    required double flyToLat,
+    required double flyToLon,
+    required bool calculateBearingFromFirst,
+  }) async {
+    // Group active attacks by source/destination path
+    final Map<String, List<ActiveAttack>> pathGroups = {};
+    for (final attack in _activeAttacks) {
+      final key =
+          '${attack.sourceLon.toStringAsFixed(5)}_${attack.sourceLat.toStringAsFixed(5)}_${attack.targetLon.toStringAsFixed(5)}_${attack.targetLat.toStringAsFixed(5)}';
+      pathGroups.putIfAbsent(key, () => []).add(attack);
+    }
+
+    final StringBuffer placemarksBuffer = StringBuffer();
+    int groupIndex = 0;
+
+    for (final entry in pathGroups.entries) {
+      final groupAttacks = entry.value;
+      final firstAttack = groupAttacks.first;
+      final count = groupAttacks.length;
+      final groupId = ++groupIndex;
+
+      // Determine style based on highest severity in group
+      String highestSeverity = 'low';
+      for (final a in groupAttacks) {
+        final sev = a.severity.toLowerCase();
+        if (sev == 'critical') {
+          highestSeverity = 'critical';
+          break;
+        } else if (sev == 'high') {
+          highestSeverity = 'high';
+        } else if (sev == 'medium' && highestSeverity != 'high') {
+          highestSeverity = 'medium';
+        }
       }
 
-      final StringBuffer placemarksBuffer = StringBuffer();
+      final severityLower = highestSeverity;
+      final stylePrefix = severityLower == 'critical'
+          ? 'critical'
+          : severityLower == 'high'
+          ? 'high'
+          : severityLower == 'medium'
+          ? 'medium'
+          : 'low';
 
-      for (int index = 0; index < _activeAttacks.length; index++) {
-        final attack = _activeAttacks[index];
-        final id = index + 1;
+      final severityColor = severityLower == 'critical'
+          ? '#ff4a5a'
+          : severityLower == 'high'
+          ? '#ff9f43'
+          : severityLower == 'medium'
+          ? '#feca57'
+          : '#1dd1a1';
 
-        final severityLower = attack.severity.toLowerCase();
-        final stylePrefix = severityLower == 'critical'
-            ? 'critical'
-            : severityLower == 'high'
-            ? 'high'
-            : severityLower == 'medium'
-            ? 'medium'
-            : 'low';
-
-        final severityColor = severityLower == 'critical'
+      // Build HTML table rows listing all attacks for this path
+      final StringBuffer tableRows = StringBuffer();
+      for (final attack in groupAttacks) {
+        final attackColor = attack.severity.toLowerCase() == 'critical'
             ? '#ff4a5a'
-            : severityLower == 'high'
+            : attack.severity.toLowerCase() == 'high'
             ? '#ff9f43'
-            : severityLower == 'medium'
+            : attack.severity.toLowerCase() == 'medium'
             ? '#feca57'
             : '#1dd1a1';
+        tableRows.write('''
+          <tr style="border-bottom: 1px solid #1e293b;">
+            <td style="padding: 6px 0; color: #f1f5f9; font-weight: 500;">${attack.attackName}</td>
+            <td style="padding: 6px 8px; font-weight: 700; color: $attackColor;">${attack.severity.toUpperCase()}</td>
+          </tr>
+        ''');
+      }
 
-        final description =
-            '''<description><![CDATA[
-        <div style="font-family: 'Outfit', 'Segoe UI', Roboto, sans-serif; min-width: 280px; padding: 16px; background-color: #0f111a; color: #ffffff; border-radius: 12px; border: 1px solid #1e293b;">
-          <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 16px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; letter-spacing: 0.5px;">ATTACK TELEMETRY DETAIL</h3>
-          <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-            <tr style="border-bottom: 1px solid #1e293b;">
-              <td style="padding: 8px 0; font-weight: 600; color: #94a3b8; width: 90px;">Vector:</td>
-              <td style="padding: 8px 0; color: #f1f5f9; font-weight: 500;">${attack.attackName}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #1e293b;">
-              <td style="padding: 8px 0; font-weight: 600; color: #94a3b8;">Severity:</td>
-              <td style="padding: 8px 0; font-weight: 700; color: $severityColor;">${attack.severity.toUpperCase()}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #1e293b;">
-              <td style="padding: 8px 0; font-weight: 600; color: #94a3b8;">Origin:</td>
-              <td style="padding: 8px 0; color: #f1f5f9;">${attack.sourceCountry}<br/><span style="font-size: 11px; color: #64748b;">(${attack.sourceLat.toStringAsFixed(4)}, ${attack.sourceLon.toStringAsFixed(4)})</span></td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: 600; color: #94a3b8;">Target:</td>
-              <td style="padding: 8px 0; color: #f1f5f9;">${attack.targetCountry}<br/><span style="font-size: 11px; color: #64748b;">(${attack.targetLat.toStringAsFixed(4)}, ${attack.targetLon.toStringAsFixed(4)})</span></td>
-            </tr>
-          </table>
+      final description =
+          '''<description><![CDATA[
+        <div style="font-family: 'Outfit', 'Segoe UI', Roboto, sans-serif; min-width: 320px; padding: 16px; background-color: #0f111a; color: #ffffff; border-radius: 12px; border: 1px solid #1e293b;">
+          <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 16px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; letter-spacing: 0.5px;">PATH TELEMETRY DETAILS</h3>
+          <p style="font-size: 12px; margin: 4px 0 12px 0; color: #94a3b8;">
+            Origin: <b>${firstAttack.sourceCountry}</b> (${firstAttack.sourceLat.toStringAsFixed(4)}, ${firstAttack.sourceLon.toStringAsFixed(4)})<br/>
+            Target: <b>${firstAttack.targetCountry}</b> (${firstAttack.targetLat.toStringAsFixed(4)}, ${firstAttack.targetLon.toStringAsFixed(4)})
+          </p>
+          <div style="max-height: 180px; overflow-y: auto;">
+            <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 1px solid #334155; color: #94a3b8; font-weight: 600; text-align: left;">
+                  <th style="padding: 4px 0;">Vector</th>
+                  <th style="padding: 4px 8px;">Severity</th>
+                </tr>
+              </thead>
+              <tbody>
+                $tableRows
+              </tbody>
+            </table>
+          </div>
         </div>
       ]]></description>''';
 
-        // 1. Source Point Placemark
-        placemarksBuffer.write('''
+      final pathSuffix = count > 1 ? ' ($count Detections)' : '';
+
+      // 1. Source Point Placemark
+      placemarksBuffer.write('''
     <Placemark>
-      <name>[$id] Source: ${attack.sourceCountry}</name>
+      <name>[$groupId] Source: ${firstAttack.sourceCountry}$pathSuffix</name>
       $description
       <styleUrl>#${stylePrefix}Point</styleUrl>
       <Point>
-        <coordinates>${attack.sourceLon},${attack.sourceLat},0</coordinates>
+        <coordinates>${firstAttack.sourceLon},${firstAttack.sourceLat},0</coordinates>
       </Point>
     </Placemark>''');
 
-        // 2. Target Point Placemark
-        placemarksBuffer.write('''
+      // 2. Target Point Placemark
+      placemarksBuffer.write('''
     <Placemark>
-      <name>[$id] Target: ${attack.targetCountry} (${attack.attackName})</name>
+      <name>[$groupId] Target: ${firstAttack.targetCountry} (${firstAttack.attackName})$pathSuffix</name>
       $description
       <styleUrl>#targetPoint</styleUrl>
       <Point>
-        <coordinates>${attack.targetLon},${attack.targetLat},0</coordinates>
+        <coordinates>${firstAttack.targetLon},${firstAttack.targetLat},0</coordinates>
       </Point>
     </Placemark>''');
 
-        // 3. 3D Curved Parabolic Line Placemark
-        final coordinatesStr = _generateParabolicCoordinates(
-          attack.sourceLat,
-          attack.sourceLon,
-          attack.targetLat,
-          attack.targetLon,
-        );
+      // 3. 3D Curved Parabolic Line Placemark
+      final coordinatesStr = _generateParabolicCoordinates(
+        firstAttack.sourceLat,
+        firstAttack.sourceLon,
+        firstAttack.targetLat,
+        firstAttack.targetLon,
+      );
 
-        placemarksBuffer.write('''
+      placemarksBuffer.write('''
     <Placemark>
-      <name>[$id] Attack Vector (${attack.attackName})</name>
+      <name>[$groupId] Attack Vector (${firstAttack.attackName})$pathSuffix</name>
       $description
       <styleUrl>#${stylePrefix}Line</styleUrl>
       <LineString>
@@ -2302,10 +2383,10 @@ class LgService extends ChangeNotifier {
         </coordinates>
       </LineString>
     </Placemark>''');
-      }
+    }
 
-      final kmlContent =
-          '''<?xml version="1.0" encoding="UTF-8"?>
+    final kmlContent =
+        '''<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
   <Document>
     <name>Active Cyber Attacks</name>
@@ -2322,7 +2403,6 @@ class LgService extends ChangeNotifier {
     <Style id="highPoint">
       <IconStyle>
         <scale>1.5</scale>
-
         <Icon>
           <href>http://maps.google.com/mapfiles/kml/paddle/orange-circle.png</href>
         </Icon>
@@ -2380,37 +2460,41 @@ class LgService extends ChangeNotifier {
       </LineStyle>
     </Style>
 
-    ${placemarksBuffer.toString()}
+    $placemarksBuffer
   </Document>
 </kml>''';
 
-      final uploadedName = await uploadKml(kmlContent, 'cyber_attack.kml');
-      if (uploadedName != null) {
-        await query('slave_1=http://lg1:81/$uploadedName');
-      }
-
-      // Calculate bearing from target looking back to source
-      final heading = _calculateBearing(
-        targetLat,
-        targetLon,
-        sourceLat,
-        sourceLon,
-      );
-
-      final lookAt =
-          '''<LookAt>
-          <longitude>$targetLon</longitude>
-          <latitude>$targetLat</latitude>
-          <altitude>0</altitude>
-          <heading>$heading</heading>
-          <tilt>45</tilt>
-          <range>6000000</range>
-          <gx:altitudeMode>relativeToGround</gx:altitudeMode>
-        </LookAt>''';
-      await flyTo(lookAt);
-    } catch (e) {
-      debugPrint('Error sending cyber attack KML: $e');
+    final uploadedName = await uploadKml(kmlContent, 'cyber_attack.kml');
+    if (uploadedName != null) {
+      await query('slave_1=http://lg1:81/$uploadedName');
     }
+
+    // Determine camera LookAt view
+    double heading = 0.0;
+    double range = 8000000.0; // wider range for overview
+
+    if (calculateBearingFromFirst && _activeAttacks.isNotEmpty) {
+      final first = _activeAttacks.last; // fly to latest single attack
+      heading = _calculateBearing(
+        flyToLat,
+        flyToLon,
+        first.sourceLat,
+        first.sourceLon,
+      );
+      range = 6000000.0;
+    }
+
+    final lookAt =
+        '''<LookAt>
+        <longitude>$flyToLon</longitude>
+        <latitude>$flyToLat</latitude>
+        <altitude>0</altitude>
+        <heading>$heading</heading>
+        <tilt>45</tilt>
+        <range>$range</range>
+        <gx:altitudeMode>relativeToGround</gx:altitudeMode>
+      </LookAt>''';
+    await flyTo(lookAt);
   }
 
   // -------- sendCyberAttackOverlayKML() method --------
@@ -2455,6 +2539,229 @@ class LgService extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error sending cyber attack overlay: $e');
+    }
+  }
+
+  // Helper to upload files via SFTP to prevent shell escaping or EOF delimiter issues
+  Future<bool> _uploadFile(String content, String remotePath) async {
+    if (_client == null) return false;
+    try {
+      final sftp = await _client!.sftp();
+      final file = await sftp.open(
+        remotePath,
+        mode:
+            SftpFileOpenMode.truncate |
+            SftpFileOpenMode.create |
+            SftpFileOpenMode.write,
+      );
+
+      final tempName = remotePath.split('/').last;
+      final currentFile = await _createFile(tempName, content);
+      final fileStream = currentFile.openRead();
+      int offset = 0;
+      await for (final chunk in fileStream) {
+        final typedChunk = Uint8List.fromList(chunk);
+        await file.write(Stream.fromIterable([typedChunk]), offset: offset);
+        offset += typedChunk.length;
+      }
+      await file.close();
+      sftp.close();
+
+      // Clean up local temp file
+      await currentFile.delete();
+      return true;
+    } catch (e) {
+      debugPrint('Error uploading file via SFTP to $remotePath: $e');
+      return false;
+    }
+  }
+
+  // -------- sendCategoryInsightsOverlay() method --------
+  // Sends a ScreenOverlay showing the category threat insights to the rightmost screen
+  Future<bool> sendCategoryInsightsOverlay({
+    required String category,
+    required String markdownText,
+  }) async {
+    if (_client == null) {
+      debugPrint('SSH client not connected');
+      return false;
+    }
+
+    try {
+      final rightMost = calculateRightMostScreen(_lgConnectionModel.screens);
+
+      // Convert markdown to simple HTML
+      String bodyHtml = markdownText;
+      bodyHtml = bodyHtml.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+      // Convert ## headers
+      bodyHtml = bodyHtml.replaceAllMapped(
+        RegExp(r'^##\s+(.+)$', multiLine: true),
+        (match) {
+          return '<h2 style="font-size: 15px; font-weight: bold; color: #38bdf8; margin-top: 14px; margin-bottom: 6px; border-bottom: 1px solid #334155; padding-bottom: 4px;">${match.group(1)}</h2>';
+        },
+      );
+
+      // Convert bold **text**
+      bodyHtml = bodyHtml.replaceAllMapped(RegExp(r'\*\*(.+?)\*\*'), (match) {
+        return '<strong style="color: #ffffff; font-weight: bold;">${match.group(1)}</strong>';
+      });
+
+      // Convert bullet points
+      bodyHtml = bodyHtml.replaceAllMapped(
+        RegExp(r'^\s*[\*\-]\s+(.+)$', multiLine: true),
+        (match) {
+          return '<li style="margin-left: 12px; margin-bottom: 4px; color: #cbd5e1; list-style-type: square;">${match.group(1)}</li>';
+        },
+      );
+
+      // Convert paragraph newlines
+      bodyHtml = bodyHtml.replaceAll(
+        '\n\n',
+        '</p><p style="margin-top: 8px; margin-bottom: 8px; line-height: 1.5; color: #cbd5e1;">',
+      );
+      bodyHtml =
+          '<p style="margin-top: 8px; margin-bottom: 8px; line-height: 1.5; color: #cbd5e1;">' +
+          bodyHtml +
+          '</p>';
+
+      final htmlContent =
+          """<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #0f111a;
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      width: 450px;
+      height: 550px;
+      box-sizing: border-box;
+      border: 3px solid #1e293b;
+      border-radius: 16px;
+      overflow-y: auto;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #2dd4bf;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+    }
+    .divider {
+      height: 1px;
+      background-color: #334155;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      font-size: 11px;
+      font-weight: bold;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      background-color: rgba(45, 212, 191, 0.1);
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    /* Style scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f111a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">Gemini Threat Insights</div>
+  <div class="subtitle">Category: ${category.toUpperCase()}</div>
+  <div class="divider"></div>
+  <div style="font-size: 13px;">
+    $bodyHtml
+  </div>
+</body>
+</html>""";
+
+      final randomNumber = DateTime.now().millisecondsSinceEpoch % 1000;
+      final htmlFileName = 'gemini_insights_$randomNumber.html';
+      final pngFileName = 'gemini_insights_$randomNumber.png';
+      final overlayKmlName = 'gemini_insights_overlay_$randomNumber.kml';
+
+      // 1. Write HTML file directly to Apache directory via SFTP
+      final htmlSuccess = await _uploadFile(
+        htmlContent,
+        '/var/www/html/$htmlFileName',
+      );
+      if (!htmlSuccess) return false;
+
+      // 2. Render HTML to PNG via headless Google Chrome
+      final chromeCommand =
+          """
+if command -v google-chrome &>/dev/null; then
+  google-chrome --headless --no-sandbox --disable-gpu --screenshot=/var/www/html/$pngFileName --window-size=450,550 http://localhost:81/$htmlFileName
+elif command -v google-chrome-stable &>/dev/null; then
+  google-chrome-stable --headless --no-sandbox --disable-gpu --screenshot=/var/www/html/$pngFileName --window-size=450,550 http://localhost:81/$htmlFileName
+elif command -v chromium-browser &>/dev/null; then
+  chromium-browser --headless --no-sandbox --disable-gpu --screenshot=/var/www/html/$pngFileName --window-size=450,550 http://localhost:81/$htmlFileName
+elif command -v chromium &>/dev/null; then
+  chromium --headless --no-sandbox --disable-gpu --screenshot=/var/www/html/$pngFileName --window-size=450,550 http://localhost:81/$htmlFileName
+fi
+""";
+      final screenshotSuccess = await execute(
+        chromeCommand,
+        'Captured insights screenshot successfully',
+      );
+      if (!screenshotSuccess) return false;
+
+      // 3. Generate the ScreenOverlay KML pointing to the generated PNG
+      final overlayKml =
+          """<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Gemini Insights Overlay</name>
+    <ScreenOverlay>
+      <name>Telemetry Overlay</name>
+      <Icon>
+        <href>http://lg1:81/$pngFileName</href>
+      </Icon>
+      <overlayXY x="1" y="1" xunits="fraction" yunits="fraction"/>
+      <screenXY x="0.98" y="0.95" xunits="fraction" yunits="fraction"/>
+      <size x="450" y="550" xunits="pixels" yunits="pixels"/>
+    </ScreenOverlay>
+  </Document>
+</kml>""";
+
+      // 4. Write the overlay KML directly to Apache directory via SFTP
+      final overlaySuccess = await _uploadFile(
+        overlayKml,
+        '/var/www/html/$overlayKmlName',
+      );
+      if (!overlaySuccess) return false;
+
+      // 5. Query the rightmost screen to point to this overlay KML
+      await query('slave_$rightMost=http://lg1:81/$overlayKmlName');
+
+      // 6. Force screen to refresh so it loads immediately
+      await forceRefresh(rightMost);
+      return true;
+    } catch (e) {
+      debugPrint('Error sending category insights overlay KML: $e');
+      return false;
     }
   }
 }

@@ -121,6 +121,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _triggerMultipleVisualisation(
+    BuildContext context,
+    List<AttackEvent> events,
+    LgAdapter adapter,
+  ) async {
+    final success = await adapter.visualizeMultipleOnLG(events);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'Projected all ${events.length} attack vectors onto Liquid Galaxy.'
+                : 'Failed to send KML projections. Verify connection settings.',
+          ),
+          backgroundColor: success
+              ? Colors.green.shade800
+              : Colors.red.shade800,
+        ),
+      );
+    }
+  }
+
   Future<void> _triggerVisualisation(
     BuildContext context,
     AttackEvent event,
@@ -870,37 +893,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       horizontal: 16.0,
                       vertical: 8.0,
                     ),
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark
-                            ? Colors.cyan.shade900.withOpacity(0.3)
-                            : Colors.indigo.shade50,
-                        foregroundColor: isDark
-                            ? Colors.cyanAccent
-                            : Colors.indigo,
-                        side: BorderSide(
-                          color: isDark
-                              ? Colors.cyanAccent.withOpacity(0.3)
-                              : Colors.indigo.shade200,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: lgService.isConnected
+                                  ? (isDark
+                                        ? Colors.green.shade900.withOpacity(0.3)
+                                        : Colors.green.shade50)
+                                  : (isDark
+                                        ? Colors.grey.shade900.withOpacity(0.3)
+                                        : Colors.grey.shade100),
+                              foregroundColor: lgService.isConnected
+                                  ? (isDark
+                                        ? Colors.greenAccent
+                                        : Colors.green.shade700)
+                                  : Colors.grey,
+                              side: BorderSide(
+                                color: lgService.isConnected
+                                    ? (isDark
+                                          ? Colors.greenAccent.withOpacity(0.3)
+                                          : Colors.green.shade200)
+                                    : Colors.grey.withOpacity(0.2),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              minimumSize: const Size.fromHeight(40),
+                            ),
+                            icon: const Icon(Icons.send_rounded, size: 16),
+                            label: const Text(
+                              'Visualise All',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onPressed: lgService.isConnected
+                                ? () => _triggerMultipleVisualisation(
+                                    context,
+                                    attacks,
+                                    adapter,
+                                  )
+                                : null,
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDark
+                                  ? Colors.cyan.shade900.withOpacity(0.3)
+                                  : Colors.indigo.shade50,
+                              foregroundColor: isDark
+                                  ? Colors.cyanAccent
+                                  : Colors.indigo,
+                              side: BorderSide(
+                                color: isDark
+                                    ? Colors.cyanAccent.withOpacity(0.3)
+                                    : Colors.indigo.shade200,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              minimumSize: const Size.fromHeight(40),
+                            ),
+                            icon: const Icon(Icons.psychology, size: 16),
+                            label: const Text(
+                              'Gemini Insights',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onPressed: () => _showGeminiCategorySummary(
+                              context,
+                              category,
+                              attacks,
+                            ),
+                          ),
                         ),
-                        minimumSize: const Size.fromHeight(40),
-                      ),
-                      icon: const Icon(Icons.psychology, size: 18),
-                      label: Text(
-                        'Get Insights using Gemini for ${category.toUpperCase()}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onPressed: () => _showGeminiCategorySummary(
-                        context,
-                        category,
-                        attacks,
-                      ),
+                      ],
                     ),
                   ),
                   ListView.builder(
