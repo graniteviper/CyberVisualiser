@@ -4,6 +4,7 @@ import '../providers/track_ip_provider.dart';
 import '../services/lg_service.dart';
 import '../services/track_ip_lg_service.dart';
 import '../services/gemini_service.dart';
+import '../services/text_to_speech_service.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class TrackIpPage extends StatefulWidget {
@@ -17,10 +18,18 @@ class _TrackIpPageState extends State<TrackIpPage> {
   final _formKey = GlobalKey<FormState>();
   final _ipController = TextEditingController();
   double _maxAgeInDays = 5.0;
+  TextToSpeechService? _ttsService;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ttsService = Provider.of<TextToSpeechService>(context, listen: false);
+  }
 
   @override
   void dispose() {
     _ipController.dispose();
+    _ttsService?.stop();
     super.dispose();
   }
 
@@ -57,21 +66,29 @@ class _TrackIpPageState extends State<TrackIpPage> {
     TrackIpProvider provider,
     TrackIpLgService lgService,
     GeminiService geminiService,
-  ) {
+  ) async {
     if (_formKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
       final ipAddress = _ipController.text.trim();
       final maxAge = _maxAgeInDays.toInt();
 
+      final tts = Provider.of<TextToSpeechService>(context, listen: false);
+      await tts.stop();
+
       if (provider.report != null && provider.report!.ipAddress == ipAddress) {
-        provider.analyzeWithGemini(geminiService);
+        await provider.analyzeWithGemini(geminiService);
       } else {
-        provider.trackAndAnalyze(
+        await provider.trackAndAnalyze(
           ipAddress: ipAddress,
           maxAgeInDays: maxAge,
           geminiService: geminiService,
           lgService: lgService,
         );
+      }
+
+      if (!mounted) return;
+      if (provider.geminiSummary != null) {
+        await tts.speak(provider.geminiSummary!);
       }
     }
   }
@@ -725,47 +742,76 @@ class _TrackIpPageState extends State<TrackIpPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.teal.shade900.withValues(alpha: 0.4)
-                          : Colors.teal.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.teal.shade800
-                            : Colors.teal.shade200,
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.psychology_rounded,
-                          color: isDark
-                              ? Colors.teal.shade300
-                              : Colors.teal.shade800,
-                          size: 16,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'GEMINI AI THREAT REPORT',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.teal.shade900.withValues(alpha: 0.4)
+                              : Colors.teal.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
                             color: isDark
-                                ? Colors.teal.shade300
-                                : Colors.teal.shade800,
-                            letterSpacing: 1.0,
+                                ? Colors.teal.shade800
+                                : Colors.teal.shade200,
+                            width: 1,
                           ),
                         ),
-                      ],
-                    ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.psychology_rounded,
+                              color: isDark
+                                  ? Colors.teal.shade300
+                                  : Colors.teal.shade800,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'GEMINI AI THREAT REPORT',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: isDark
+                                    ? Colors.teal.shade300
+                                    : Colors.teal.shade800,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Consumer<TextToSpeechService>(
+                        builder: (context, tts, _) {
+                          return IconButton(
+                            tooltip: tts.isSpeaking
+                                ? 'Stop Speaking'
+                                : 'Listen to Report',
+                            icon: Icon(
+                              tts.isSpeaking
+                                  ? Icons.volume_up_rounded
+                                  : Icons.volume_mute_rounded,
+                              color: isDark
+                                  ? Colors.teal.shade300
+                                  : Colors.teal.shade800,
+                            ),
+                            onPressed: () {
+                              if (tts.isSpeaking) {
+                                tts.stop();
+                              } else {
+                                tts.speak(provider.geminiSummary!);
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   const Divider(height: 20, color: Colors.transparent),
                   GeminiReportRenderer(text: provider.geminiSummary!),

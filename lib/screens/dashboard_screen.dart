@@ -6,6 +6,7 @@ import '../services/lg_service.dart';
 import '../services/lg_adapter.dart';
 import '../widgets/event_details_panel.dart';
 import '../widgets/gemini_summary_dialog.dart';
+import '../widgets/google_maps.dart';
 import '../services/gemini_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -213,6 +214,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        SizedBox(height: 300, child: const MapPage()),
+                        const SizedBox(height: 16),
+
                         // Statistics section
                         _buildStatsGridView(attackProvider, isDark),
                         const SizedBox(height: 16),
