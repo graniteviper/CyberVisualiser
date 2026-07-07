@@ -214,10 +214,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SizedBox(
-                          height: 300,
-                          child: const MapPage(),
-                        ),
+                        SizedBox(height: 300, child: const MapPage()),
                         const SizedBox(height: 16),
 
                         // Statistics section

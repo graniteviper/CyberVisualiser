@@ -55,17 +55,22 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _onCameraMove(CameraPosition position) {
-    bearingvalue = position.bearing; 
-    longvalue = position.target.longitude; 
+    bearingvalue = position.bearing;
+    longvalue = position.target.longitude;
     latvalue = position.target.latitude;
-    tiltvalue = position.tilt; 
+    tiltvalue = position.tilt;
     zoomvalue = 591657550.500000 / pow(6, position.zoom);
   }
 
   void _onCameraIdle() async {
     final lgService = Provider.of<LgService>(context, listen: false);
-    LookAt flyto = LookAt(longvalue, latvalue , zoomvalue.toString(),
-        tiltvalue.toString(), bearingvalue.toString());
+    LookAt flyto = LookAt(
+      longvalue,
+      latvalue,
+      zoomvalue.toString(),
+      tiltvalue.toString(),
+      bearingvalue.toString(),
+    );
     try {
       await lgService.query('flytoview=${flyto.generateLinearString()}');
     } catch (e) {
@@ -86,7 +91,8 @@ class _MapPageState extends State<MapPage> {
           target: _center,
           zoom: 12,
           bearing: bearingvalue,
-          tilt: tiltvalue),
+          tilt: tiltvalue,
+        ),
         onCameraMove: _onCameraMove,
         onCameraIdle: _onCameraIdle,
       ),
