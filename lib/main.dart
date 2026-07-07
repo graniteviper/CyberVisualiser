@@ -6,6 +6,7 @@ import 'services/honeylabs_service.dart';
 import 'services/abuseipdb_service.dart';
 import 'services/track_ip_lg_service.dart';
 import 'services/gemini_service.dart';
+import 'services/text_to_speech_service.dart';
 import 'repositories/attack_repository.dart';
 import 'repositories/track_ip_repository.dart';
 import 'providers/attack_provider.dart';
@@ -37,6 +38,9 @@ void main() async {
           create: (_) => ThemeNotifier()..loadThemeMode(),
         ),
         ChangeNotifierProvider<LgService>(create: (_) => LgService()),
+        ChangeNotifierProvider<TextToSpeechService>(
+          create: (_) => TextToSpeechService(),
+        ),
         ProxyProvider<LgService, LgAdapter>(
           update: (_, lgService, __) => LgAdapter(lgService),
         ),
