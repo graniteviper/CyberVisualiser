@@ -141,3 +141,6 @@ secrets.json
 # Temporary files
 tmp/
 temp/
+
+/android/app/src/main/strings.xml
+strings.xml
