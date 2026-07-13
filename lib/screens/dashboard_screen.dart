@@ -8,6 +8,7 @@ import '../widgets/event_details_panel.dart';
 import '../widgets/gemini_summary_dialog.dart';
 import '../widgets/google_maps.dart';
 import '../services/gemini_service.dart';
+import '../services/text_to_speech_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -1089,6 +1090,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  Consumer<TextToSpeechService>(
+                                    builder: (context, tts, _) {
+                                      final isThisSpeaking = tts.isSpeaking &&
+                                          tts.currentUtterance == event.eventId;
+                                      return IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        icon: Icon(
+                                          isThisSpeaking
+                                              ? Icons.volume_up_rounded
+                                              : Icons.volume_mute_rounded,
+                                          color: sevColor,
+                                        ),
+                                        tooltip: isThisSpeaking
+                                            ? 'Stop TTS'
+                                            : 'Speak Event Details',
+                                        onPressed: () {
+                                          if (isThisSpeaking) {
+                                            tts.stop();
+                                          } else {
+                                            tts.speak(
+                                              'Attack detected: ${event.displayTitle}. Originating from I P ${event.sourceIp} in ${event.cityName.isNotEmpty ? event.cityName + ", " : ""}${event.countryName}. Target port is ${event.destPort}. Severity level is ${event.severity}.',
+                                              utteranceId: event.eventId,
+                                            );
+                                          }
+                                        },
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
                                   IconButton(
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),

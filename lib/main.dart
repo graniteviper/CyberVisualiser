@@ -230,12 +230,6 @@ class _AppShellState extends State<AppShell> {
                     isDark: isDark,
                   ),
                   _buildDrawerItem(
-                    icon: Icons.settings_rounded,
-                    title: 'Connection Settings',
-                    index: 1,
-                    isDark: isDark,
-                  ),
-                  _buildDrawerItem(
                     icon: Icons.location_on_rounded,
                     title: 'Track IP',
                     index: 2,
@@ -245,6 +239,12 @@ class _AppShellState extends State<AppShell> {
                     icon: Icons.psychology_outlined,
                     title: 'Attack Simulator',
                     index: 3,
+                    isDark: isDark,
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.settings_rounded,
+                    title: 'Connection Settings',
+                    index: 1,
                     isDark: isDark,
                   ),
                 ],

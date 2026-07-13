@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/attack_event.dart';
 import '../services/lg_adapter.dart';
+import '../services/text_to_speech_service.dart';
 
 class EventDetailsPanel extends StatelessWidget {
   final AttackEvent event;
@@ -62,9 +64,40 @@ class EventDetailsPanel extends StatelessWidget {
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
+                Row(
+                  children: [
+                    Consumer<TextToSpeechService>(
+                      builder: (context, tts, _) {
+                        final isThisSpeaking = tts.isSpeaking &&
+                            tts.currentUtterance == event.eventId;
+                        return IconButton(
+                          icon: Icon(
+                            isThisSpeaking
+                                ? Icons.volume_up_rounded
+                                : Icons.volume_mute_rounded,
+                            color: sevColor,
+                          ),
+                          tooltip: isThisSpeaking
+                              ? 'Stop TTS'
+                              : 'Speak Event Details',
+                          onPressed: () {
+                            if (isThisSpeaking) {
+                              tts.stop();
+                            } else {
+                              tts.speak(
+                                'Attack telemetry event details. Event I D is ${event.eventId}. Source I P is ${event.sourceIp}, originating from ${event.cityName.isNotEmpty ? event.cityName + ", " : ""}${event.countryName}. Destination port is ${event.destPort}. Protocol is ${event.networkProtocol}. Severity level is ${event.severity}.',
+                                utteranceId: event.eventId,
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
               ],
             ),

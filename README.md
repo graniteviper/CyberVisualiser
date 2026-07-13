@@ -120,7 +120,7 @@ You can configure threat credentials in two ways:
 
 #### 2. Android Google Maps API Key Setup
 If running on Android, you must configure the Google Maps API Key:
-1. Locate the file `strings.xml.example` in the root directory. Change it's name to `strings.xml`.
+1. Locate the file `strings.xml.example` in the root directory. Change it's name to `strings.xml` and move it to `android/app/src/main/res/values`.
 2. Open that `strings.xml` and replace the value with your actual Google Maps API key:
    ```xml
    <?xml version="1.0" encoding="utf-8"?>
