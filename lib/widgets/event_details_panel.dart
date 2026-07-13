@@ -68,7 +68,8 @@ class EventDetailsPanel extends StatelessWidget {
                   children: [
                     Consumer<TextToSpeechService>(
                       builder: (context, tts, _) {
-                        final isThisSpeaking = tts.isSpeaking &&
+                        final isThisSpeaking =
+                            tts.isSpeaking &&
                             tts.currentUtterance == event.eventId;
                         return IconButton(
                           icon: Icon(

@@ -34,7 +34,9 @@ void main() {
         providers: [
           ChangeNotifierProvider<ThemeNotifier>(create: (_) => ThemeNotifier()),
           ChangeNotifierProvider<LgService>(create: (_) => LgService()),
-          ChangeNotifierProvider<TextToSpeechService>(create: (_) => TextToSpeechService()),
+          ChangeNotifierProvider<TextToSpeechService>(
+            create: (_) => TextToSpeechService(),
+          ),
           ProxyProvider<LgService, LgAdapter>(
             update: (_, lgService, __) => LgAdapter(lgService),
           ),

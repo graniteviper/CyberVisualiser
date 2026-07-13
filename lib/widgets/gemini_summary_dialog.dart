@@ -132,7 +132,8 @@ class _GeminiSummaryDialogState extends State<GeminiSummaryDialog> {
                     if (_summaryText != null)
                       Consumer<TextToSpeechService>(
                         builder: (context, tts, _) {
-                          final isThisSpeaking = tts.isSpeaking &&
+                          final isThisSpeaking =
+                              tts.isSpeaking &&
                               tts.currentUtterance == widget.category;
                           return IconButton(
                             icon: Icon(

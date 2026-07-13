@@ -1092,7 +1092,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 children: [
                                   Consumer<TextToSpeechService>(
                                     builder: (context, tts, _) {
-                                      final isThisSpeaking = tts.isSpeaking &&
+                                      final isThisSpeaking =
+                                          tts.isSpeaking &&
                                           tts.currentUtterance == event.eventId;
                                       return IconButton(
                                         padding: EdgeInsets.zero,
