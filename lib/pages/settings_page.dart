@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/lg_service.dart';
 import '../theme/theme_notifier.dart';
 import '../utils/config.dart';
+import '../widgets/qr_scanner.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -103,6 +104,59 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _scanQrSettings() async {
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(builder: (context) => const QrScanner()),
+    );
+
+    if (result != null && mounted) {
+      final ip = result['ip']?.toString() ?? '';
+      final port = int.tryParse(result['port']?.toString() ?? '22') ?? 22;
+      final username = result['username']?.toString() ?? 'lg';
+      final password = result['password']?.toString() ?? 'lqgalaxy';
+      final screens = int.tryParse(result['screens']?.toString() ?? '3') ?? 3;
+
+      setState(() {
+        _ipController.text = ip;
+        _portController.text = port.toString();
+        _usernameController.text = username;
+        _passwordController.text = password;
+        _screensController.text = screens.toString();
+      });
+
+      // Save connection settings
+      await _saveSettings();
+
+      // Trigger automatic connection to Liquid Galaxy rig
+      final service = context.read<LgService>();
+      if (service.isConnected) {
+        service.disconnect();
+      }
+
+      // Show connecting status
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Attempting to connect to Liquid Galaxy...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      final success = await service.connectToLG();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success == true
+                  ? 'Connected successfully!'
+                  : 'Connection failed.',
+            ),
+            backgroundColor: success == true ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final service = context.watch<LgService>();
@@ -128,6 +182,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'Liquid Galaxy Settings',
                   style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.qr_code_scanner),
+                  tooltip: 'Scan QR Settings',
+                  onPressed: _scanQrSettings,
                 ),
               ],
             ),
