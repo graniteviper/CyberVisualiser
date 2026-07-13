@@ -5,6 +5,7 @@ import '../models/attack_event.dart';
 import '../services/gemini_service.dart';
 import '../services/gemini_analysis_helper.dart';
 import '../services/lg_service.dart';
+import '../services/text_to_speech_service.dart';
 
 class GeminiSummaryDialog extends StatefulWidget {
   final String category;
@@ -26,11 +27,19 @@ class _GeminiSummaryDialogState extends State<GeminiSummaryDialog> {
   bool _isLoading = true;
   String? _errorMessage;
   String? _summaryText;
+  TextToSpeechService? _ttsService;
 
   @override
   void initState() {
     super.initState();
+    _ttsService = Provider.of<TextToSpeechService>(context, listen: false);
     _fetchSummary();
+  }
+
+  @override
+  void dispose() {
+    _ttsService?.stop();
+    super.dispose();
   }
 
   Future<void> _fetchSummary() async {
@@ -118,9 +127,42 @@ class _GeminiSummaryDialogState extends State<GeminiSummaryDialog> {
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
+                Row(
+                  children: [
+                    if (_summaryText != null)
+                      Consumer<TextToSpeechService>(
+                        builder: (context, tts, _) {
+                          final isThisSpeaking =
+                              tts.isSpeaking &&
+                              tts.currentUtterance == widget.category;
+                          return IconButton(
+                            icon: Icon(
+                              isThisSpeaking
+                                  ? Icons.volume_up_rounded
+                                  : Icons.volume_mute_rounded,
+                              color: accentColor,
+                            ),
+                            tooltip: isThisSpeaking
+                                ? 'Stop Speaking'
+                                : 'Listen to Report',
+                            onPressed: () {
+                              if (isThisSpeaking) {
+                                tts.stop();
+                              } else {
+                                tts.speak(
+                                  _summaryText!,
+                                  utteranceId: widget.category,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
               ],
             ),

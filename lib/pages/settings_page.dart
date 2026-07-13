@@ -183,7 +183,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildTextField(
                       label: 'HoneyLabs API Key',
                       controller: _honeyLabsKeyController,
-                      hintText: 'hlk_...',
+                      obscureText: true,
                     ),
                     const SizedBox(height: 12),
                     _buildTextField(

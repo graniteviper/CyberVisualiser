@@ -13,6 +13,7 @@ import 'package:cyber_visualiser/repositories/track_ip_repository.dart';
 import 'package:cyber_visualiser/providers/attack_provider.dart';
 import 'package:cyber_visualiser/providers/track_ip_provider.dart';
 import 'package:cyber_visualiser/theme/theme_notifier.dart';
+import 'package:cyber_visualiser/services/text_to_speech_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,9 @@ void main() {
         providers: [
           ChangeNotifierProvider<ThemeNotifier>(create: (_) => ThemeNotifier()),
           ChangeNotifierProvider<LgService>(create: (_) => LgService()),
+          ChangeNotifierProvider<TextToSpeechService>(
+            create: (_) => TextToSpeechService(),
+          ),
           ProxyProvider<LgService, LgAdapter>(
             update: (_, lgService, __) => LgAdapter(lgService),
           ),

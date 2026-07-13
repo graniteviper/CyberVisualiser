@@ -4,8 +4,10 @@ import 'package:flutter_tts/flutter_tts.dart';
 class TextToSpeechService extends ChangeNotifier {
   final FlutterTts _flutterTts = FlutterTts();
   bool _isSpeaking = false;
+  String? _currentUtterance;
 
   bool get isSpeaking => _isSpeaking;
+  String? get currentUtterance => _currentUtterance;
 
   TextToSpeechService() {
     _initTts();
@@ -19,21 +21,24 @@ class TextToSpeechService extends ChangeNotifier {
 
     _flutterTts.setCompletionHandler(() {
       _isSpeaking = false;
+      _currentUtterance = null;
       notifyListeners();
     });
 
     _flutterTts.setCancelHandler(() {
       _isSpeaking = false;
+      _currentUtterance = null;
       notifyListeners();
     });
 
     _flutterTts.setErrorHandler((msg) {
       _isSpeaking = false;
+      _currentUtterance = null;
       notifyListeners();
     });
   }
 
-  Future<void> speak(String text) async {
+  Future<void> speak(String text, {String? utteranceId}) async {
     // Clean text by stripping markdown symbols to make speech sound natural
     final cleanText = text
         .replaceAll(RegExp(r'[\*#_`~>]'), '') // remove markdown symbols
@@ -43,6 +48,7 @@ class TextToSpeechService extends ChangeNotifier {
     if (cleanText.isEmpty) return;
 
     await _flutterTts.stop(); // Stop any current speech before starting new
+    _currentUtterance = utteranceId ?? text;
     await _flutterTts.setLanguage("en-US");
     await _flutterTts.setPitch(1.0);
     await _flutterTts.setSpeechRate(0.55);
@@ -52,6 +58,7 @@ class TextToSpeechService extends ChangeNotifier {
   Future<void> stop() async {
     await _flutterTts.stop();
     _isSpeaking = false;
+    _currentUtterance = null;
     notifyListeners();
   }
 
