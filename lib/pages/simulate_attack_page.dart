@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/lg_service.dart';
 import '../services/gemini_service.dart';
 import '../templates/simulation_prompt_template.dart';
+import '../templates/simulation_kml_generator.dart';
 
 class SimulateAttackPage extends StatefulWidget {
   const SimulateAttackPage({super.key});
@@ -35,10 +36,10 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
     super.dispose();
   }
 
-  String _extractKml(String responseText) {
-    // 1. Try finding XML block enclosed in ```xml ... ```
-    final xmlRegex = RegExp(r'```xml([\s\S]*?)```');
-    var match = xmlRegex.firstMatch(responseText);
+  String _extractJson(String responseText) {
+    // 1. Try finding JSON block enclosed in ```json ... ```
+    final jsonRegex = RegExp(r'```json([\s\S]*?)```');
+    var match = jsonRegex.firstMatch(responseText);
     if (match != null) {
       return match.group(1)!.trim();
     }
@@ -48,21 +49,15 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
     match = genericRegex.firstMatch(responseText);
     if (match != null) {
       final codeBlock = match.group(1)!.trim();
-      if (codeBlock.startsWith('<?xml') || codeBlock.contains('<kml')) {
+      if (codeBlock.startsWith('{') || codeBlock.contains('"target"')) {
         return codeBlock;
       }
     }
 
-    // 3. Fallback: search for direct XML content
-    if (responseText.contains('<?xml') && responseText.contains('</kml>')) {
-      final start = responseText.indexOf('<?xml');
-      final end = responseText.indexOf('</kml>') + 6;
-      return responseText.substring(start, end).trim();
-    }
-
-    if (responseText.contains('<kml') && responseText.contains('</kml>')) {
-      final start = responseText.indexOf('<kml');
-      final end = responseText.indexOf('</kml>') + 6;
+    // 3. Fallback: search for direct JSON structure
+    if (responseText.contains('{') && responseText.contains('}')) {
+      final start = responseText.indexOf('{');
+      final end = responseText.lastIndexOf('}') + 1;
       return responseText.substring(start, end).trim();
     }
 
@@ -106,16 +101,12 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
       );
 
       setState(() {
-        _statusMessage = 'Extracting and parsing KML structure...';
+        _statusMessage = 'Extracting and parsing threat intelligence...';
       });
 
-      // 3. Extract KML
-      final kml = _extractKml(responseText);
-      if (!kml.contains('<kml') || !kml.contains('</kml>')) {
-        throw Exception(
-          'Gemini response did not contain a valid KML structure. Raw output preview: \n${responseText.length > 200 ? "${responseText.substring(0, 200)}..." : responseText}',
-        );
-      }
+      // 3. Extract JSON and generate KML
+      final jsonBlock = _extractJson(responseText);
+      final kml = SimulationKmlGenerator.generateKmlFromJson(jsonBlock);
 
       setState(() {
         _generatedKml = kml;
