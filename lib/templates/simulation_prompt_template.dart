@@ -11,6 +11,7 @@ User request: "$userPrompt"
 Return a single JSON object with the following structure:
 {
   "scenarioName": "string (A short, descriptive name for the simulation, e.g., 'SYN Flood DDoS from East Asia')",
+  "summary": "string (A concise, 2-3 sentence overview of the simulated attack scenario AND a direct, clear answer to any other queries or questions that the user included in their prompt, if any. Use basic markdown like bullet points if needed.)",
   "target": {
     "name": "string (name of the target server/infrastructure, e.g., 'US Central DB Server')",
     "locationName": "string (country or city name of target)",

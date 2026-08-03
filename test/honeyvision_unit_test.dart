@@ -6,6 +6,7 @@ import 'package:cyber_visualiser/repositories/attack_repository.dart';
 import 'package:cyber_visualiser/providers/attack_provider.dart';
 import 'package:cyber_visualiser/utils/country_coordinates.dart';
 import 'package:cyber_visualiser/utils/config.dart';
+import 'package:cyber_visualiser/templates/simulation_prompt_template.dart';
 
 class StubHoneyLabsService extends HoneyLabsService {
   List<Map<String, dynamic>> stubbedEvents = [];
@@ -268,6 +269,14 @@ void main() {
       expect(grouped['brute force']?[0].eventId, '3');
       expect(grouped['malware']?[0].eventId, '4');
       expect(grouped['other']?[0].eventId, '5');
+    });
+  });
+
+  group('SimulationPromptTemplate Tests', () {
+    test('Should include "summary" field instruction in the prompt', () {
+      final prompt = SimulationPromptTemplate.buildSimulationPrompt('test query');
+      expect(prompt, contains('"summary"'));
+      expect(prompt, contains('test query'));
     });
   });
 }

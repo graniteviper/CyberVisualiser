@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:provider/provider.dart';
 import '../services/lg_service.dart';
 import '../services/gemini_service.dart';
+import '../services/text_to_speech_service.dart';
 import '../templates/simulation_prompt_template.dart';
 import '../templates/simulation_kml_generator.dart';
 
@@ -22,6 +25,8 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
   String _generatedKml = '';
   String _errorMessage = '';
   bool _isVisualized = false;
+  String _simulationSummary = '';
+  TextToSpeechService? _ttsService;
 
   final List<String> _presets = [
     'show me a ddos attack from multiple locations to a server based in usa',
@@ -31,8 +36,15 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
   ];
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ttsService = Provider.of<TextToSpeechService>(context, listen: false);
+  }
+
+  @override
   void dispose() {
     _promptController.dispose();
+    _ttsService?.stop();
     super.dispose();
   }
 
@@ -81,12 +93,15 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
     final geminiService = context.read<GeminiService>();
     final lgService = context.read<LgService>();
 
+    _ttsService?.stop();
+
     setState(() {
       _isLoading = true;
       _statusMessage =
           'Prompting Gemini AI model to generate KML simulation...';
       _errorMessage = '';
       _generatedKml = '';
+      _simulationSummary = '';
     });
 
     try {
@@ -108,8 +123,18 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
       final jsonBlock = _extractJson(responseText);
       final kml = SimulationKmlGenerator.generateKmlFromJson(jsonBlock);
 
+      // Extract summary
+      String summary = '';
+      try {
+        final decodedJson = json.decode(jsonBlock);
+        summary = decodedJson['summary'] ?? '';
+      } catch (e) {
+        debugPrint('Failed to extract summary from JSON: $e');
+      }
+
       setState(() {
         _generatedKml = kml;
+        _simulationSummary = summary;
         _statusMessage = 'Uploading KML simulation file to Liquid Galaxy...';
       });
 
@@ -144,6 +169,10 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
         _statusMessage = 'Simulation projected successfully!';
       });
 
+      if (_simulationSummary.isNotEmpty) {
+        _ttsService?.speak(_simulationSummary, utteranceId: 'simulation_summary');
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -172,6 +201,7 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
 
   Future<void> _clearSimulation() async {
     final lgService = context.read<LgService>();
+    _ttsService?.stop();
     setState(() {
       _isLoading = true;
       _statusMessage = 'Clearing Liquid Galaxy visuals...';
@@ -182,6 +212,7 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
       setState(() {
         _isVisualized = false;
         _generatedKml = '';
+        _simulationSummary = '';
         _isLoading = false;
         _statusMessage = '';
       });
@@ -634,6 +665,83 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                     ),
                   ),
                 ],
+              ),
+            ],
+            if (_simulationSummary.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.insights_rounded,
+                        color: isDark ? Colors.cyanAccent : Colors.indigo,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'AI Simulation Summary',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.cyanAccent : Colors.indigo.shade900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Consumer<TextToSpeechService>(
+                    builder: (context, tts, _) {
+                      final isThisSpeaking =
+                          tts.isSpeaking && tts.currentUtterance == 'simulation_summary';
+                      return IconButton(
+                        icon: Icon(
+                          isThisSpeaking ? Icons.volume_up_rounded : Icons.volume_mute_rounded,
+                          color: isDark ? Colors.cyanAccent : Colors.indigo,
+                          size: 20,
+                        ),
+                        tooltip: isThisSpeaking ? 'Stop Speaking' : 'Speak Summary',
+                        onPressed: () {
+                          if (isThisSpeaking) {
+                            tts.stop();
+                          } else {
+                            tts.speak(
+                              _simulationSummary,
+                              utteranceId: 'simulation_summary',
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF141622)
+                      : Colors.blue.shade50.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.blue.shade900.withOpacity(0.2)
+                        : Colors.blue.shade100,
+                  ),
+                ),
+                child: MarkdownBody(
+                  data: _simulationSummary,
+                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                    p: TextStyle(
+                      fontSize: 13.5,
+                      height: 1.5,
+                      color: isDark ? Colors.grey.shade300 : Colors.black87,
+                    ),
+                  ),
+                ),
               ),
             ],
             if (_generatedKml.isNotEmpty) ...[
