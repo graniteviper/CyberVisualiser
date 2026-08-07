@@ -170,7 +170,10 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
       });
 
       if (_simulationSummary.isNotEmpty) {
-        _ttsService?.speak(_simulationSummary, utteranceId: 'simulation_summary');
+        _ttsService?.speak(
+          _simulationSummary,
+          utteranceId: 'simulation_summary',
+        );
       }
 
       if (mounted) {
@@ -687,7 +690,9 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.cyanAccent : Colors.indigo.shade900,
+                          color: isDark
+                              ? Colors.cyanAccent
+                              : Colors.indigo.shade900,
                         ),
                       ),
                     ],
@@ -695,14 +700,19 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                   Consumer<TextToSpeechService>(
                     builder: (context, tts, _) {
                       final isThisSpeaking =
-                          tts.isSpeaking && tts.currentUtterance == 'simulation_summary';
+                          tts.isSpeaking &&
+                          tts.currentUtterance == 'simulation_summary';
                       return IconButton(
                         icon: Icon(
-                          isThisSpeaking ? Icons.volume_up_rounded : Icons.volume_mute_rounded,
+                          isThisSpeaking
+                              ? Icons.volume_up_rounded
+                              : Icons.volume_mute_rounded,
                           color: isDark ? Colors.cyanAccent : Colors.indigo,
                           size: 20,
                         ),
-                        tooltip: isThisSpeaking ? 'Stop Speaking' : 'Speak Summary',
+                        tooltip: isThisSpeaking
+                            ? 'Stop Speaking'
+                            : 'Speak Summary',
                         onPressed: () {
                           if (isThisSpeaking) {
                             tts.stop();
@@ -734,13 +744,14 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                 ),
                 child: MarkdownBody(
                   data: _simulationSummary,
-                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-                    p: TextStyle(
-                      fontSize: 13.5,
-                      height: 1.5,
-                      color: isDark ? Colors.grey.shade300 : Colors.black87,
-                    ),
-                  ),
+                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                      .copyWith(
+                        p: TextStyle(
+                          fontSize: 13.5,
+                          height: 1.5,
+                          color: isDark ? Colors.grey.shade300 : Colors.black87,
+                        ),
+                      ),
                 ),
               ),
             ],

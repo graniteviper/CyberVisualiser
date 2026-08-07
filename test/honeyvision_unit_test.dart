@@ -274,7 +274,9 @@ void main() {
 
   group('SimulationPromptTemplate Tests', () {
     test('Should include "summary" field instruction in the prompt', () {
-      final prompt = SimulationPromptTemplate.buildSimulationPrompt('test query');
+      final prompt = SimulationPromptTemplate.buildSimulationPrompt(
+        'test query',
+      );
       expect(prompt, contains('"summary"'));
       expect(prompt, contains('test query'));
     });

@@ -18,6 +18,9 @@ import 'pages/settings_page.dart';
 import 'pages/track_ip_page.dart';
 import 'pages/simulate_attack_page.dart';
 import 'utils/config.dart';
+import 'features/historical/repository/historical_repository.dart';
+import 'features/historical/providers/historical_provider.dart';
+import 'features/historical/screens/historical_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +33,7 @@ void main() async {
 
   final abuseDbService = AbuseIpDbService();
   final trackRepository = TrackIpRepository(abuseDbService);
+  final historicalRepository = HistoricalRepository();
 
   runApp(
     MultiProvider(
@@ -53,6 +57,9 @@ void main() async {
         ),
         ChangeNotifierProvider<TrackIpProvider>(
           create: (_) => TrackIpProvider(trackRepository),
+        ),
+        ChangeNotifierProvider<HistoricalProvider>(
+          create: (_) => HistoricalProvider(historicalRepository),
         ),
       ],
       child: const MainApp(),
@@ -94,6 +101,7 @@ class _AppShellState extends State<AppShell> {
     SettingsPage(),
     TrackIpPage(),
     SimulateAttackPage(),
+    HistoricalScreen(),
   ];
 
   @override
@@ -227,6 +235,12 @@ class _AppShellState extends State<AppShell> {
                     icon: Icons.dashboard_rounded,
                     title: 'Dashboard',
                     index: 0,
+                    isDark: isDark,
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.history_edu_rounded,
+                    title: 'Historical Attacks',
+                    index: 4,
                     isDark: isDark,
                   ),
                   _buildDrawerItem(
