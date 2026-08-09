@@ -375,7 +375,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'HONEYVISION',
+                  'cyber visualiser',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,

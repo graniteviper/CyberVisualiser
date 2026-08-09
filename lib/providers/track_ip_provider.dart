@@ -52,7 +52,7 @@ class TrackIpProvider extends ChangeNotifier {
         await projectOnLG(lgService);
       }
     } catch (e) {
-      debugPrint('HoneyVision TrackIP Provider Error: $e');
+      debugPrint('cyber visualiser TrackIP Provider Error: $e');
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
@@ -79,7 +79,7 @@ class TrackIpProvider extends ChangeNotifier {
       _geminiSummary = summary;
       _geminiError = null;
     } catch (e) {
-      debugPrint('HoneyVision Gemini Analysis Error: $e');
+      debugPrint('cyber visualiser Gemini Analysis Error: $e');
       _geminiError = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isAnalyzing = false;
@@ -125,7 +125,7 @@ class TrackIpProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('HoneyVision TrackIP Provider LG Projection Error: $e');
+      debugPrint('cyber visualiser TrackIP Provider LG Projection Error: $e');
       return false;
     }
   }
@@ -140,7 +140,7 @@ class TrackIpProvider extends ChangeNotifier {
       }
       return success;
     } catch (e) {
-      debugPrint('HoneyVision TrackIP Provider LG Clear Error: $e');
+      debugPrint('cyber visualiser TrackIP Provider LG Clear Error: $e');
       return false;
     }
   }

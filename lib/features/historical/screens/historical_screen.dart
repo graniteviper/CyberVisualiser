@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/historical_attack.dart';
 import '../providers/historical_provider.dart';
 import '../widgets/historical_filter_bar.dart';
 import '../widgets/historical_search_bar.dart';
 import '../widgets/statistics_card.dart';
 import '../widgets/incident_card.dart';
+import '../widgets/historical_gemini_dialog.dart';
 import 'historical_details_screen.dart';
 
 /// Screen displaying the historical cyber attacks database with search, filter, and stats overview.
@@ -23,6 +25,22 @@ class _HistoricalScreenState extends State<HistoricalScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HistoricalProvider>().loadHistoricalAttacks();
     });
+  }
+
+  void _openGeminiAssistant(
+    BuildContext context, {
+    int? year,
+    String? category,
+    required List<HistoricalAttack> contextAttacks,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => HistoricalGeminiDialog(
+        year: year,
+        category: category,
+        contextAttacks: contextAttacks,
+      ),
+    );
   }
 
   @override
@@ -246,6 +264,24 @@ class _HistoricalScreenState extends State<HistoricalScreen> {
             ],
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          final provider = context.read<HistoricalProvider>();
+          _openGeminiAssistant(
+            context,
+            year: provider.selectedYear,
+            category: provider.selectedCategory,
+            contextAttacks: provider.filteredAttacks,
+          );
+        },
+        backgroundColor: isDark ? Colors.cyanAccent : Colors.indigo,
+        foregroundColor: isDark ? Colors.black : Colors.white,
+        icon: const Icon(Icons.auto_awesome),
+        label: const Text(
+          'Ask Gemini',
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        ),
       ),
     );
   }

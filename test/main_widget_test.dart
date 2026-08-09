@@ -14,6 +14,10 @@ import 'package:cyber_visualiser/providers/attack_provider.dart';
 import 'package:cyber_visualiser/providers/track_ip_provider.dart';
 import 'package:cyber_visualiser/theme/theme_notifier.dart';
 import 'package:cyber_visualiser/services/text_to_speech_service.dart';
+import 'package:cyber_visualiser/services/gemini_service.dart';
+import 'package:cyber_visualiser/features/historical/repository/historical_repository.dart';
+import 'package:cyber_visualiser/features/historical/providers/historical_provider.dart';
+import 'package:cyber_visualiser/features/historical/models/historical_attack.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +32,7 @@ void main() {
 
     final abuseDbService = AbuseIpDbService();
     final trackRepository = TrackIpRepository(abuseDbService);
+    final historicalRepository = MockHistoricalRepository();
 
     await tester.pumpWidget(
       MultiProvider(
@@ -43,6 +48,7 @@ void main() {
           ProxyProvider<LgService, TrackIpLgService>(
             update: (_, lgService, __) => TrackIpLgService(lgService),
           ),
+          Provider<GeminiService>(create: (_) => GeminiService()),
           ChangeNotifierProvider<AttackProvider>(
             create: (_) =>
                 AttackProvider(repository)
@@ -50,6 +56,9 @@ void main() {
           ),
           ChangeNotifierProvider<TrackIpProvider>(
             create: (_) => TrackIpProvider(trackRepository),
+          ),
+          ChangeNotifierProvider<HistoricalProvider>(
+            create: (_) => HistoricalProvider(historicalRepository),
           ),
         ],
         child: const MaterialApp(
@@ -92,4 +101,11 @@ void main() {
     // Verify it navigates to the Track IP screen
     expect(find.text('IP TRACKER'), findsOneWidget);
   });
+}
+
+class MockHistoricalRepository extends HistoricalRepository {
+  @override
+  Future<List<HistoricalAttack>> getHistoricalAttacks() async {
+    return [];
+  }
 }

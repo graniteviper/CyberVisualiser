@@ -31,7 +31,7 @@ class LgAdapter {
   /// Projects the attack vector KML and overlay card on Liquid Galaxy rig
   Future<bool> visualizeOnLG(AttackEvent event) async {
     if (!_lgService.isConnected) {
-      debugPrint('HoneyVision LG Adapter: Liquid Galaxy is not connected.');
+      debugPrint('cyber visualiser LG Adapter: Liquid Galaxy is not connected.');
       return false;
     }
 
@@ -42,7 +42,7 @@ class LgAdapter {
       );
 
       debugPrint(
-        'HoneyVision LG Adapter: Visualizing attack vector on LG '
+        'cyber visualiser LG Adapter: Visualizing attack vector on LG '
         'from ${event.countryCode} (${sourceCoord.latitude}, ${sourceCoord.longitude}) '
         'to $_targetCountry ($_targetLat, $_targetLon)',
       );
@@ -76,7 +76,7 @@ class LgAdapter {
       return true;
     } catch (e) {
       debugPrint(
-        'HoneyVision LG Adapter Error: Failed to send KML visualization: $e',
+        'cyber visualiser LG Adapter Error: Failed to send KML visualization: $e',
       );
       return false;
     }
@@ -85,7 +85,7 @@ class LgAdapter {
   /// Projects all attack events in a list onto the Liquid Galaxy at once
   Future<bool> visualizeMultipleOnLG(List<AttackEvent> events) async {
     if (!_lgService.isConnected) {
-      debugPrint('HoneyVision LG Adapter: Liquid Galaxy is not connected.');
+      debugPrint('cyber visualiser LG Adapter: Liquid Galaxy is not connected.');
       return false;
     }
 
@@ -120,7 +120,7 @@ class LgAdapter {
       return true;
     } catch (e) {
       debugPrint(
-        'HoneyVision LG Adapter Error: Failed to send multiple KML visualizations: $e',
+        'cyber visualiser LG Adapter Error: Failed to send multiple KML visualizations: $e',
       );
       return false;
     }

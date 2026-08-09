@@ -1,6 +1,6 @@
-# 🛡️ HoneyVision: Cyber Threat Visualizer for Liquid Galaxy
+# 🛡️ cyber visualiser: Cyber Threat Visualizer for Liquid Galaxy
 
-HoneyVision is a premium, real-time cyber security threat monitoring dashboard built with Flutter. It aggregates live honeypot telemetry, queries global threat intelligence platforms, and utilizes state-of-the-art Generative AI to project threat vectors, dynamic attacker/victim markers, and live HTML-to-PNG overlay cards across a **Liquid Galaxy** multi-screen rig.
+cyber visualiser is a premium, real-time cyber security threat monitoring dashboard built with Flutter. It aggregates live honeypot telemetry, queries global threat intelligence platforms, and utilizes state-of-the-art Generative AI to project threat vectors, dynamic attacker/victim markers, and live HTML-to-PNG overlay cards across a **Liquid Galaxy** multi-screen rig.
 
 It incorporates **Gemini AI** to perform deep behavioral threat analysis and power a natural-language **Attack Simulator** that compiles text prompts into custom KML visual sequences. Additionally, it integrates a **Text-to-Speech (TTS)** engine for hands-free audio threat briefing.
 
@@ -64,7 +64,7 @@ graph TD
 
 ## 🔌 Data Sources & APIs
 
-HoneyVision leverages three core external APIs:
+cyber visualiser leverages three core external APIs:
 
 | Source | Endpoint | API Protocol | Used for... |
 | :--- | :--- | :--- | :--- |
@@ -77,7 +77,7 @@ HoneyVision leverages three core external APIs:
 ## 🛠️ Technical Approach & Workarounds
 
 * **Multi-Screen Synchronisation:** Liquid Galaxy slave nodes are queried through target configurations in a virtual `kmls.txt` index file (e.g. `slave_1=http://lg1:81/...kml`). 
-* **Liquid Galaxy Screen Refresh Technique:** When overlay KMLs are updated, Liquid Galaxy often fails to redraw immediately. HoneyVision resolves this by issuing a temporary Linux `sed` edit over SSH to set `refreshMode` to `onInterval` with a `refreshInterval` of `1` second on `/~/earth/kml/slave/myplaces.kml`, delaying `1` second, and restoring the original configuration.
+* **Liquid Galaxy Screen Refresh Technique:** When overlay KMLs are updated, Liquid Galaxy often fails to redraw immediately. cyber visualiser resolves this by issuing a temporary Linux `sed` edit over SSH to set `refreshMode` to `onInterval` with a `refreshInterval` of `1` second on `/~/earth/kml/slave/myplaces.kml`, delaying `1` second, and restoring the original configuration.
 * **Dart Provider Architecture:** Decouples UI screens from business logic. State flows from service files through repository layers, into `AttackProvider` and `TrackIpProvider` which control the widgets.
 * **LLM-to-KML Extraction:** Bypasses LLM output noise by using rigorous regex rules to isolate and extract clean KML blocks from the raw Gemini response before pushing them to the Liquid Galaxy master node.
 
@@ -133,7 +133,7 @@ If running on Android, you must configure the Google Maps API Key:
 
 ## 🏃 Running the Application
 
-To launch HoneyVision locally, execute the following commands in your terminal:
+To launch cyber visualiser locally, execute the following commands in your terminal:
 
 ### 1. Fetch Dependencies
 ```powershell

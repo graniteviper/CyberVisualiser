@@ -90,7 +90,7 @@ class AttackProvider extends ChangeNotifier {
       _lastFetchTime = DateTime.now();
       _errorMessage = null;
     } catch (e) {
-      debugPrint('HoneyVision Provider Error: $e');
+      debugPrint('cyber visualiser Provider Error: $e');
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;

@@ -74,7 +74,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeNotifier = context.watch<ThemeNotifier>();
     return MaterialApp(
-      title: 'HoneyVision Dashboard',
+      title: 'cyber visualiser Dashboard',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeNotifier.themeMode,
@@ -185,6 +185,7 @@ class _AppShellState extends State<AppShell> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DrawerHeader(
+              padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
               decoration: BoxDecoration(
                 color: isDark
                     ? const Color(0xFF0F111A)
@@ -205,13 +206,13 @@ class _AppShellState extends State<AppShell> {
                   Icon(
                     Icons.shield,
                     color: isDark ? Colors.cyanAccent : Colors.amberAccent,
-                    size: 40,
+                    size: 32,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 4),
                   const Text(
-                    'HONEYVISION',
+                    'CYBER VISUALISER',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                       letterSpacing: 2.0,

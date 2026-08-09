@@ -1,5 +1,6 @@
 import '../models/abuse_report_model.dart';
 import '../models/attack_event.dart';
+import '../features/historical/models/historical_attack.dart';
 
 class GeminiPromptTemplate {
   /// Generates a detailed prompt to be sent to Gemini for threat intelligence summary
@@ -103,6 +104,74 @@ Identify geographic concentrations (countries, regions) and ISP/ASN networks res
 Provide a list of specific, actionable defense measures (such as firewall rules, rate limiting, port configuration, or updates) to mitigate this activity.
 
 Keep the tone highly professional, concise, and structured with Markdown headers and bullet points. Do not output meta-commentary, introductory filler, or AI boilerplate.
+''';
+  }
+
+  /// Generates a detailed prompt to ask Gemini about a specific historical attack incident.
+  static String fillHistoricalAttackPrompt(HistoricalAttack attack, String userQuestion) {
+    return '''
+You are an expert cyber threat intelligence analyst. You are assisting a security operations center team with information on a specific historical cyber security incident from our database.
+
+Here are the details of the attack:
+- Title: ${attack.title}
+- Date: ${attack.month} ${attack.year} (${attack.date})
+- Victim: ${attack.victim.name} (Country: ${attack.victim.country}, Sector: ${attack.attack.targetSector})
+- Attacker: ${attack.attacker.name} (Type: ${attack.attacker.type})
+- Attack Category: ${attack.attack.category} (Severity: ${attack.attack.severity}/10)
+- Summary: ${attack.summary}
+- Source: ${attack.source.name} (Year: ${attack.source.year})
+- Tags: ${attack.tags.join(', ')}
+
+The user has the following question or request:
+"$userQuestion"
+
+Please write a structured, informative, and professional answer based on this incident. Use Markdown headings (e.g. '##') and bullet points where appropriate. Keep the response concise, authoritative, and helpful. Do not output meta instructions or AI boilerplate.
+''';
+  }
+
+  /// Generates a prompt to ask Gemini about attacks in a particular year, category, or general historical data.
+  static String fillHistoricalContextPrompt({
+    int? year,
+    String? category,
+    required List<HistoricalAttack> contextAttacks,
+    required String userQuestion,
+  }) {
+    final StringBuffer logBuffer = StringBuffer();
+    for (int i = 0; i < contextAttacks.length; i++) {
+      final item = contextAttacks[i];
+      logBuffer.writeln('Incident #${i + 1}:');
+      logBuffer.writeln('  Title: ${item.title}');
+      logBuffer.writeln('  Date: ${item.month} ${item.year}');
+      logBuffer.writeln('  Victim: ${item.victim.name} (Country: ${item.victim.country}, Sector: ${item.attack.targetSector})');
+      logBuffer.writeln('  Attacker: ${item.attacker.name} (${item.attacker.type})');
+      logBuffer.writeln('  Category: ${item.attack.category} (Severity: ${item.attack.severity}/10)');
+      logBuffer.writeln('  Summary: ${item.summary}');
+      logBuffer.writeln('');
+    }
+
+    String scopeText = "";
+    if (year != null && category != null) {
+      scopeText = "attacks that happened in the year $year and categorized as $category";
+    } else if (year != null) {
+      scopeText = "attacks that happened in the year $year";
+    } else if (category != null) {
+      scopeText = "attacks of type $category";
+    } else {
+      scopeText = "historical cyber attacks";
+    }
+
+    return '''
+You are an expert cyber threat intelligence analyst. You are assisting a security analyst by answering questions about $scopeText.
+Here is the context representing relevant cyber incidents from our database:
+
+--- DATABASE INCIDENTS (Max 10) ---
+${logBuffer.isNotEmpty ? logBuffer.toString() : "No matching database records found."}
+
+The user has the following question/request:
+"$userQuestion"
+
+Please synthesize your reply using both the provided database incidents and your general threat intelligence knowledge. Provide a clear, professional, and structured analysis of the cyber security landscape regarding this query.
+Use Markdown formatting (e.g., '##' headers, bullet points, bold text). Keep it concise, professional, and action-oriented. Do not include AI helper commentary or meta explanations.
 ''';
   }
 }

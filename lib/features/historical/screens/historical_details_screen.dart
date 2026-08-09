@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/historical_attack.dart';
+import '../widgets/historical_gemini_dialog.dart';
 
 /// Screen displaying the full details of a specific historical cyber incident.
 class HistoricalDetailsScreen extends StatelessWidget {
@@ -15,13 +16,33 @@ class HistoricalDetailsScreen extends StatelessWidget {
     return const Color(0xFF388E3C); // Low (Green)
   }
 
+  void _openGeminiAssistant(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => HistoricalGeminiDialog(
+        attack: attack,
+        contextAttacks: [attack],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final severityColor = _getSeverityColor(attack.attack.severity);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('INCIDENT DETAILS'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('INCIDENT DETAILS'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome),
+            tooltip: 'Ask Gemini',
+            onPressed: () => _openGeminiAssistant(context),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -173,6 +194,64 @@ class HistoricalDetailsScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.5,
                   color: isDark ? Colors.grey.shade300 : Colors.black87,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Gemini Action Card
+            Card(
+              color: isDark ? const Color(0xFF1F2336) : Colors.indigo.shade50,
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: isDark ? Colors.blueGrey.shade800 : Colors.indigo.shade200,
+                ),
+              ),
+              child: InkWell(
+                onTap: () => _openGeminiAssistant(context),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.psychology,
+                        color: isDark ? Colors.cyanAccent : Colors.indigo,
+                        size: 32,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Analyze with Gemini AI',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: isDark ? Colors.white : Colors.indigo.shade900,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Get technical breakdowns, threat actor insights, and custom Q&A.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: isDark ? Colors.cyanAccent : Colors.indigo,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

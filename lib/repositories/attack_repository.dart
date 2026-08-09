@@ -37,7 +37,7 @@ class AttackRepository {
       } catch (e) {
         // Skip malformed records to ensure robustness
         print(
-          'HoneyVision Repository Warning: Skipped parsing malformed record: $e',
+          'cyber visualiser Repository Warning: Skipped parsing malformed record: $e',
         );
       }
     }
