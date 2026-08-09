@@ -31,7 +31,9 @@ class LgAdapter {
   /// Projects the attack vector KML and overlay card on Liquid Galaxy rig
   Future<bool> visualizeOnLG(AttackEvent event) async {
     if (!_lgService.isConnected) {
-      debugPrint('cyber visualiser LG Adapter: Liquid Galaxy is not connected.');
+      debugPrint(
+        'cyber visualiser LG Adapter: Liquid Galaxy is not connected.',
+      );
       return false;
     }
 
@@ -85,7 +87,9 @@ class LgAdapter {
   /// Projects all attack events in a list onto the Liquid Galaxy at once
   Future<bool> visualizeMultipleOnLG(List<AttackEvent> events) async {
     if (!_lgService.isConnected) {
-      debugPrint('cyber visualiser LG Adapter: Liquid Galaxy is not connected.');
+      debugPrint(
+        'cyber visualiser LG Adapter: Liquid Galaxy is not connected.',
+      );
       return false;
     }
 

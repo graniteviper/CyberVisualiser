@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/track_ip_provider.dart';
@@ -14,11 +15,25 @@ class TrackIpPage extends StatefulWidget {
   State<TrackIpPage> createState() => _TrackIpPageState();
 }
 
-class _TrackIpPageState extends State<TrackIpPage> {
+class _TrackIpPageState extends State<TrackIpPage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _ipController = TextEditingController();
   double _maxAgeInDays = 5.0;
   TextToSpeechService? _ttsService;
+  late final AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      _pulseController.repeat(reverse: true);
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -30,6 +45,7 @@ class _TrackIpPageState extends State<TrackIpPage> {
   void dispose() {
     _ipController.dispose();
     _ttsService?.stop();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -121,7 +137,7 @@ class _TrackIpPageState extends State<TrackIpPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeaderBanner(isDark),
+            _buildHeaderBanner(context, isDark),
             _buildRigConnectionBar(lgService, isDark),
             Expanded(
               child: SingleChildScrollView(
@@ -142,55 +158,58 @@ class _TrackIpPageState extends State<TrackIpPage> {
     );
   }
 
-  Widget _buildHeaderBanner(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F111A) : Colors.indigo.shade900,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? Colors.blue.shade900.withOpacity(0.5)
-                : Colors.indigo.shade800,
-            width: 1,
-          ),
-        ),
-      ),
+  Widget _buildHeaderBanner(BuildContext context, bool isDark) {
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subtitleColor = isDark ? Colors.grey.shade400 : Colors.black54;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open navigation drawer',
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0D1124) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? const Color(0xFF00E5FF).withOpacity(0.05)
+                      : Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.location_on_rounded,
+              color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF3B82F6),
+              size: 28,
+            ),
           ),
-          const SizedBox(width: 12),
-          Icon(
-            Icons.location_on_rounded,
-            color: isDark ? Colors.cyanAccent : Colors.amberAccent,
-            size: 32,
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'IP TRACKER',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: titleColor,
                     letterSpacing: 2.0,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  'Query AbuseIPDB threat intel and project attack vectors',
+                  'Threat Intel Profiler & Geolocator',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.grey.shade400 : Colors.white70,
-                    fontWeight: FontWeight.w400,
+                    color: subtitleColor,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -202,52 +221,85 @@ class _TrackIpPageState extends State<TrackIpPage> {
   }
 
   Widget _buildRigConnectionBar(LgService lgService, bool isDark) {
-    final statusColor = lgService.isConnected ? Colors.green : Colors.red;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: isDark ? const Color(0xFF141622) : Colors.grey.shade200,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Rig Server: ${lgService.isConnected ? "CONNECTED" : "DISCONNECTED"} (${lgService.connectionModel.ip}:${lgService.connectionModel.port})',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+    final statusColor = lgService.isConnected
+        ? const Color(0xFF00FFC2)
+        : Colors.redAccent;
+    final statusText = lgService.isConnected ? "Rig Connected" : "Rig Offline";
+    final activeGlowColor = lgService.isConnected
+        ? const Color(0xFF00FFC2)
+        : Colors.redAccent;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
           ),
-          if (!lgService.isConnected)
-            const Text(
-              'Visualization Offline',
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: activeGlowColor.withOpacity(
+                              0.6 * _pulseController.value,
+                            ),
+                            blurRadius: 8 * _pulseController.value,
+                            spreadRadius: 2 * _pulseController.value,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '$statusText • ${lgService.connectionModel.ip}:${lgService.connectionModel.port}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              lgService.isConnected ? 'Ready' : 'Offline',
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
-            )
-          else
-            const Text(
-              'Visualization Ready',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.green,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
+                color: lgService.isConnected
+                    ? const Color(0xFF00FFC2)
+                    : Colors.grey,
+                letterSpacing: 0.5,
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -257,18 +309,31 @@ class _TrackIpPageState extends State<TrackIpPage> {
     TrackIpLgService trackLgService,
     bool isDark,
   ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isDark
-              ? Colors.blueGrey.shade900.withOpacity(0.5)
-              : Colors.grey.shade300,
+    final activeColor = isDark
+        ? const Color(0xFF00E5FF)
+        : const Color(0xFF3B82F6);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.all(20.0),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.02),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -279,48 +344,60 @@ class _TrackIpPageState extends State<TrackIpPage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.blue.shade200 : Colors.indigo.shade800,
+                  color: isDark
+                      ? const Color(0xFF00E5FF)
+                      : const Color(0xFF3B82F6),
                   letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _ipController,
                 validator: _validateIp,
                 keyboardType: TextInputType.url,
                 autocorrect: false,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Target IP Address',
                   hintText: 'e.g. 213.209.159.227',
-                  prefixIcon: Icon(Icons.search_rounded),
-                  border: OutlineInputBorder(),
-                  isDense: true,
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: isDark
+                        ? const Color(0xFF00E5FF).withOpacity(0.7)
+                        : const Color(0xFF3B82F6),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Search Window (Days):',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                      horizontal: 10,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.blue.shade900.withOpacity(0.3)
-                          : Colors.indigo.shade50,
-                      borderRadius: BorderRadius.circular(8),
+                          ? const Color(0xFF00E5FF).withOpacity(0.12)
+                          : const Color(0xFF3B82F6).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '${_maxAgeInDays.toInt()} Days',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? const Color(0xFF00E5FF)
+                            : const Color(0xFF3B82F6),
                       ),
                     ),
                   ),
@@ -331,6 +408,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                 min: 1.0,
                 max: 30.0,
                 divisions: 29,
+                activeColor: activeColor,
+                inactiveColor: isDark
+                    ? Colors.blueGrey.shade800
+                    : Colors.grey.shade300,
                 label: '${_maxAgeInDays.toInt()} days',
                 onChanged: provider.isLoading
                     ? null
@@ -346,13 +427,12 @@ class _TrackIpPageState extends State<TrackIpPage> {
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: isDark
-                            ? Colors.blue.shade900
-                            : Colors.indigo.shade700,
-                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: activeColor,
+                        foregroundColor: isDark ? Colors.black : Colors.white,
+                        minimumSize: const Size(0, 48),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       onPressed: provider.isLoading
@@ -367,10 +447,16 @@ class _TrackIpPageState extends State<TrackIpPage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Icon(Icons.location_searching_rounded),
+                          : const Icon(
+                              Icons.location_searching_rounded,
+                              size: 20,
+                            ),
                       label: const Text(
                         'Track IP Address',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -378,14 +464,18 @@ class _TrackIpPageState extends State<TrackIpPage> {
                     const SizedBox(width: 12),
                     IconButton.filled(
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.red.shade900.withOpacity(0.8),
-                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.redAccent.withOpacity(0.12),
+                        foregroundColor: Colors.redAccent,
+                        side: const BorderSide(
+                          color: Colors.redAccent,
+                          width: 1.2,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         padding: const EdgeInsets.all(12),
                       ),
-                      icon: const Icon(Icons.layers_clear),
+                      icon: const Icon(Icons.layers_clear, size: 20),
                       tooltip: 'Clear KML from Liquid Galaxy',
                       onPressed: provider.isLoading
                           ? null
@@ -397,13 +487,21 @@ class _TrackIpPageState extends State<TrackIpPage> {
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   backgroundColor: isDark
-                      ? Colors.teal.shade900
-                      : Colors.teal.shade700,
-                  foregroundColor: Colors.white,
+                      ? const Color(0xFF8A2BE2).withOpacity(0.12)
+                      : Colors.indigo.shade50,
+                  foregroundColor: isDark
+                      ? const Color(0xFFE040FB)
+                      : Colors.indigo,
+                  side: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF8A2BE2).withOpacity(0.3)
+                        : Colors.indigo.shade200,
+                  ),
+                  minimumSize: const Size(0, 48),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 onPressed: (provider.isLoading || provider.isAnalyzing)
@@ -422,10 +520,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.psychology_rounded),
+                    : const Icon(Icons.psychology_rounded, size: 20),
                 label: const Text(
                   'Analyse with Gemini',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
             ],

@@ -152,7 +152,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection details imported from QR code.')),
+        const SnackBar(
+          content: Text('Connection details imported from QR code.'),
+        ),
       );
 
       // Trigger automatic connection test
@@ -216,7 +218,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.cyanAccent : Colors.indigo;
-    final accentColor = isDark ? const Color(0xFF0F111A) : Colors.indigo.shade50;
+    final accentColor = isDark
+        ? const Color(0xFF0F111A)
+        : Colors.indigo.shade50;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF070913) : Colors.grey.shade50,
@@ -225,7 +229,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             // Top Bar with Skip Button
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -255,7 +262,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: Text(
                         'Skip',
                         style: TextStyle(
-                          color: isDark ? Colors.grey.shade400 : Colors.indigo.shade600,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.indigo.shade600,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -271,7 +280,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ],
               ),
             ),
-            
+
             // Onboarding Slides
             Expanded(
               child: PageView(
@@ -317,7 +326,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   // Indicator Dots
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_numPages, (index) => _buildPageIndicator(index, isDark)),
+                    children: List.generate(
+                      _numPages,
+                      (index) => _buildPageIndicator(index, isDark),
+                    ),
                   ),
 
                   // Next / Finish Button
@@ -325,10 +337,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ? ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
-                            foregroundColor: isDark ? Colors.black : Colors.white,
+                            foregroundColor: isDark
+                                ? Colors.black
+                                : Colors.white,
                             minimumSize: const Size(0, 40),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                             elevation: 4,
                             shadowColor: primaryColor.withOpacity(0.4),
                           ),
@@ -347,11 +366,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         )
                       : ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isDark ? Colors.grey.shade900 : Colors.indigo.shade900,
+                            backgroundColor: isDark
+                                ? Colors.grey.shade900
+                                : Colors.indigo.shade900,
                             foregroundColor: Colors.white,
                             minimumSize: const Size(0, 40),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                           ),
                           onPressed: () {
                             _pageController.nextPage(
@@ -409,9 +435,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isDark ? Colors.cyan.withOpacity(0.05) : Colors.indigo.withOpacity(0.05),
+              color: isDark
+                  ? Colors.cyan.withOpacity(0.05)
+                  : Colors.indigo.withOpacity(0.05),
               border: Border.all(
-                color: isDark ? Colors.cyanAccent.withOpacity(0.2) : Colors.indigo.withOpacity(0.2),
+                color: isDark
+                    ? Colors.cyanAccent.withOpacity(0.2)
+                    : Colors.indigo.withOpacity(0.2),
                 width: 2,
               ),
               boxShadow: isDark
@@ -455,11 +485,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildBriefFeatureIcon(Icons.dashboard_rounded, 'Visualize', isDark, primaryColor),
+              _buildBriefFeatureIcon(
+                Icons.dashboard_rounded,
+                'Visualize',
+                isDark,
+                primaryColor,
+              ),
               const SizedBox(width: 24),
-              _buildBriefFeatureIcon(Icons.location_on_rounded, 'Track', isDark, primaryColor),
+              _buildBriefFeatureIcon(
+                Icons.location_on_rounded,
+                'Track',
+                isDark,
+                primaryColor,
+              ),
               const SizedBox(width: 24),
-              _buildBriefFeatureIcon(Icons.psychology_outlined, 'Simulate', isDark, primaryColor),
+              _buildBriefFeatureIcon(
+                Icons.psychology_outlined,
+                'Simulate',
+                isDark,
+                primaryColor,
+              ),
             ],
           ),
         ],
@@ -467,7 +512,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildBriefFeatureIcon(IconData icon, String label, bool isDark, Color primaryColor) {
+  Widget _buildBriefFeatureIcon(
+    IconData icon,
+    String label,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Column(
       children: [
         Container(
@@ -492,7 +542,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // Slide 2: Liquid Galaxy SSH Setup
-  Widget _buildLgSetupSlide(bool isDark, Color primaryColor, Color accentColor) {
+  Widget _buildLgSetupSlide(
+    bool isDark,
+    Color primaryColor,
+    Color accentColor,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: Column(
@@ -592,7 +646,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               color: accentColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? Colors.blue.shade900.withOpacity(0.4) : Colors.indigo.shade100,
+                color: isDark
+                    ? Colors.blue.shade900.withOpacity(0.4)
+                    : Colors.indigo.shade100,
                 width: 1,
               ),
             ),
@@ -608,9 +664,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       else if (_connectionSuccess == true)
-                        const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: Colors.green,
+                          size: 20,
+                        )
                       else if (_connectionSuccess == false)
-                        const Icon(Icons.error_rounded, color: Colors.red, size: 20)
+                        const Icon(
+                          Icons.error_rounded,
+                          color: Colors.red,
+                          size: 20,
+                        )
                       else
                         Icon(
                           Icons.help_outline_rounded,
@@ -623,14 +687,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           _isTestingConnection
                               ? 'Connecting...'
                               : _connectionSuccess == true
-                                  ? 'Connected'
-                                  : _connectionSuccess == false
-                                      ? 'Connection failed'
-                                      : 'Not verified yet',
+                              ? 'Connected'
+                              : _connectionSuccess == false
+                              ? 'Connection failed'
+                              : 'Not verified yet',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.indigo.shade900,
+                            color: isDark
+                                ? Colors.white
+                                : Colors.indigo.shade900,
                           ),
                         ),
                       ),
@@ -640,10 +706,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 TextButton.icon(
                   onPressed: _isTestingConnection ? null : _testConnection,
                   icon: const Icon(Icons.sync_alt_rounded, size: 16),
-                  label: const Text('Test Connection', style: TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(
-                    foregroundColor: primaryColor,
+                  label: const Text(
+                    'Test Connection',
+                    style: TextStyle(fontSize: 12),
                   ),
+                  style: TextButton.styleFrom(foregroundColor: primaryColor),
                 ),
               ],
             ),
@@ -654,7 +721,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // Slide 3: API Credentials
-  Widget _buildApiKeysSlide(bool isDark, Color primaryColor, Color accentColor) {
+  Widget _buildApiKeysSlide(
+    bool isDark,
+    Color primaryColor,
+    Color accentColor,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: Column(
@@ -692,7 +763,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             obscureText: true,
             icon: Icons.bug_report_outlined,
             isDark: isDark,
-            subtitle: 'Enables IP address profiling and safety score inquiries.',
+            subtitle:
+                'Enables IP address profiling and safety score inquiries.',
           ),
           const SizedBox(height: 16),
           _buildInputField(
@@ -709,7 +781,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // Slide 4: Features Tour
-  Widget _buildFeaturesSlide(bool isDark, Color primaryColor, Color accentColor) {
+  Widget _buildFeaturesSlide(
+    bool isDark,
+    Color primaryColor,
+    Color accentColor,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: Column(
@@ -735,7 +811,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           _buildFeatureTourCard(
             icon: Icons.dashboard_rounded,
             title: 'Threat Intel Dashboard',
-            description: 'View active global threat statistics, charts, and coordinate KML representations on the Liquid Galaxy.',
+            description:
+                'View active global threat statistics, charts, and coordinate KML representations on the Liquid Galaxy.',
             isDark: isDark,
             primaryColor: primaryColor,
           ),
@@ -743,7 +820,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           _buildFeatureTourCard(
             icon: Icons.history_edu_rounded,
             title: 'Historical Incidents DB',
-            description: 'Read reports of massive historical cyber attacks and use Gemini AI to generate insights and query summaries.',
+            description:
+                'Read reports of massive historical cyber attacks and use Gemini AI to generate insights and query summaries.',
             isDark: isDark,
             primaryColor: primaryColor,
           ),
@@ -751,7 +829,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           _buildFeatureTourCard(
             icon: Icons.location_on_rounded,
             title: 'IP Tracker & Profiler',
-            description: 'Geolocate suspect IP addresses and send orbit fly-tos directly to your Liquid Galaxy rig.',
+            description:
+                'Geolocate suspect IP addresses and send orbit fly-tos directly to your Liquid Galaxy rig.',
             isDark: isDark,
             primaryColor: primaryColor,
           ),
@@ -759,7 +838,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           _buildFeatureTourCard(
             icon: Icons.psychology_outlined,
             title: 'Attack Simulator',
-            description: 'Simulate packet flows, DDoS traffic, or server intrusions and view how they represent visually on screen.',
+            description:
+                'Simulate packet flows, DDoS traffic, or server intrusions and view how they represent visually on screen.',
             isDark: isDark,
             primaryColor: primaryColor,
           ),
@@ -776,14 +856,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     required Color primaryColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade900.withOpacity(0.6) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? const Color(0xFF0D1124) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-          width: 1,
+          color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+          width: 1.2,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.1)
+                : Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -791,10 +880,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isDark ? Colors.cyan.withOpacity(0.1) : Colors.indigo.shade50,
-              borderRadius: BorderRadius.circular(12),
+              color: isDark
+                  ? const Color(0xFF00E5FF).withOpacity(0.08)
+                  : const Color(0xFF3B82F6).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: primaryColor, size: 22),
+            child: Icon(
+              icon,
+              color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF3B82F6),
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -804,9 +899,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.indigo.shade900,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -843,44 +939,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontSize: 14,
-          ),
+          style: const TextStyle(fontSize: 14),
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: TextStyle(
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-              fontSize: 13,
-            ),
             hintText: hintText,
-            hintStyle: TextStyle(
-              color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
+            prefixIcon: Icon(
+              icon,
+              color: isDark
+                  ? const Color(0xFF00E5FF).withOpacity(0.7)
+                  : const Color(0xFF3B82F6),
+              size: 20,
             ),
-            prefixIcon: Icon(icon, color: isDark ? Colors.cyanAccent.withOpacity(0.7) : Colors.indigo, size: 20),
-            filled: true,
-            fillColor: isDark ? Colors.grey.shade900.withOpacity(0.4) : Colors.grey.shade100,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
-                width: 1,
-              ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: isDark ? Colors.cyanAccent : Colors.indigo,
-                width: 1.5,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 4),
           Padding(
-            padding: const EdgeInsets.only(left: 4.0),
+            padding: const EdgeInsets.only(left: 8.0),
             child: Text(
               subtitle,
               style: TextStyle(
@@ -889,7 +968,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-        ]
+        ],
       ],
     );
   }

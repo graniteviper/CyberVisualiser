@@ -19,10 +19,8 @@ class HistoricalDetailsScreen extends StatelessWidget {
   void _openGeminiAssistant(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => HistoricalGeminiDialog(
-        attack: attack,
-        contextAttacks: [attack],
-      ),
+      builder: (context) =>
+          HistoricalGeminiDialog(attack: attack, contextAttacks: [attack]),
     );
   }
 
@@ -206,7 +204,9 @@ class HistoricalDetailsScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
-                  color: isDark ? Colors.blueGrey.shade800 : Colors.indigo.shade200,
+                  color: isDark
+                      ? Colors.blueGrey.shade800
+                      : Colors.indigo.shade200,
                 ),
               ),
               child: InkWell(
@@ -231,7 +231,9 @@ class HistoricalDetailsScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
-                                color: isDark ? Colors.white : Colors.indigo.shade900,
+                                color: isDark
+                                    ? Colors.white
+                                    : Colors.indigo.shade900,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -239,7 +241,9 @@ class HistoricalDetailsScreen extends StatelessWidget {
                               'Get technical breakdowns, threat actor insights, and custom Q&A.',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade700,
                               ),
                             ),
                           ],

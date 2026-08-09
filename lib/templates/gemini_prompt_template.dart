@@ -108,7 +108,10 @@ Keep the tone highly professional, concise, and structured with Markdown headers
   }
 
   /// Generates a detailed prompt to ask Gemini about a specific historical attack incident.
-  static String fillHistoricalAttackPrompt(HistoricalAttack attack, String userQuestion) {
+  static String fillHistoricalAttackPrompt(
+    HistoricalAttack attack,
+    String userQuestion,
+  ) {
     return '''
 You are an expert cyber threat intelligence analyst. You are assisting a security operations center team with information on a specific historical cyber security incident from our database.
 
@@ -142,16 +145,23 @@ Please write a structured, informative, and professional answer based on this in
       logBuffer.writeln('Incident #${i + 1}:');
       logBuffer.writeln('  Title: ${item.title}');
       logBuffer.writeln('  Date: ${item.month} ${item.year}');
-      logBuffer.writeln('  Victim: ${item.victim.name} (Country: ${item.victim.country}, Sector: ${item.attack.targetSector})');
-      logBuffer.writeln('  Attacker: ${item.attacker.name} (${item.attacker.type})');
-      logBuffer.writeln('  Category: ${item.attack.category} (Severity: ${item.attack.severity}/10)');
+      logBuffer.writeln(
+        '  Victim: ${item.victim.name} (Country: ${item.victim.country}, Sector: ${item.attack.targetSector})',
+      );
+      logBuffer.writeln(
+        '  Attacker: ${item.attacker.name} (${item.attacker.type})',
+      );
+      logBuffer.writeln(
+        '  Category: ${item.attack.category} (Severity: ${item.attack.severity}/10)',
+      );
       logBuffer.writeln('  Summary: ${item.summary}');
       logBuffer.writeln('');
     }
 
     String scopeText = "";
     if (year != null && category != null) {
-      scopeText = "attacks that happened in the year $year and categorized as $category";
+      scopeText =
+          "attacks that happened in the year $year and categorized as $category";
     } else if (year != null) {
       scopeText = "attacks that happened in the year $year";
     } else if (category != null) {

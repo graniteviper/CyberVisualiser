@@ -55,11 +55,13 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
   void _addInitialGreeting() {
     String greeting = "";
     if (widget.attack != null) {
-      greeting = "Hello! I am your Cyber Threat Intelligence assistant. I have loaded details about the attack **\"${widget.attack!.title}\"**.\n\nYou can ask me about its technical breakdown, the threat actors involved, mitigation steps, or any other details you'd like to explore!";
+      greeting =
+          "Hello! I am your Cyber Threat Intelligence assistant. I have loaded details about the attack **\"${widget.attack!.title}\"**.\n\nYou can ask me about its technical breakdown, the threat actors involved, mitigation steps, or any other details you'd like to explore!";
     } else {
       String scope = "";
       if (widget.year != null && widget.category != null) {
-        scope = "attacks from the year **${widget.year}** categorized as **${widget.category}**";
+        scope =
+            "attacks from the year **${widget.year}** categorized as **${widget.category}**";
       } else if (widget.year != null) {
         scope = "attacks from the year **${widget.year}**";
       } else if (widget.category != null) {
@@ -67,14 +69,11 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
       } else {
         scope = "historical cyber attacks";
       }
-      greeting = "Hello! I am your Cyber Threat Intelligence assistant. I have loaded context from our database containing **${widget.contextAttacks.length}** matching $scope.\n\nHow can I help you analyze this database subset? You can ask about general threat landscape summaries, common vectors, or defense recommendations!";
+      greeting =
+          "Hello! I am your Cyber Threat Intelligence assistant. I have loaded context from our database containing **${widget.contextAttacks.length}** matching $scope.\n\nHow can I help you analyze this database subset? You can ask about general threat landscape summaries, common vectors, or defense recommendations!";
     }
     _messages.add(
-      ChatMessage(
-        text: greeting,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ),
+      ChatMessage(text: greeting, isUser: false, timestamp: DateTime.now()),
     );
   }
 
@@ -103,11 +102,7 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
 
     setState(() {
       _messages.add(
-        ChatMessage(
-          text: text,
-          isUser: true,
-          timestamp: DateTime.now(),
-        ),
+        ChatMessage(text: text, isUser: true, timestamp: DateTime.now()),
       );
       _isLoading = true;
     });
@@ -117,7 +112,10 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
     try {
       String prompt = "";
       if (widget.attack != null) {
-        prompt = GeminiPromptTemplate.fillHistoricalAttackPrompt(widget.attack!, text);
+        prompt = GeminiPromptTemplate.fillHistoricalAttackPrompt(
+          widget.attack!,
+          text,
+        );
       } else {
         prompt = GeminiPromptTemplate.fillHistoricalContextPrompt(
           year: widget.year,
@@ -147,7 +145,8 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
         setState(() {
           _messages.add(
             ChatMessage(
-              text: "Sorry, I encountered an error generating details:\n\n*${e.toString().replaceAll('Exception: ', '')}*",
+              text:
+                  "Sorry, I encountered an error generating details:\n\n*${e.toString().replaceAll('Exception: ', '')}*",
               isUser: false,
               timestamp: DateTime.now(),
             ),
@@ -284,7 +283,13 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
                   final msg = _messages[index];
-                  return _buildMessageBubble(msg, theme, isDark, accentColor, index);
+                  return _buildMessageBubble(
+                    msg,
+                    theme,
+                    isDark,
+                    accentColor,
+                    index,
+                  );
                 },
               ),
             ),
@@ -297,12 +302,19 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
                   children: [
                     Container(
                       margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF161925) : Colors.grey.shade100,
+                        color: isDark
+                            ? const Color(0xFF161925)
+                            : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade300,
+                          color: isDark
+                              ? Colors.blueGrey.shade900
+                              : Colors.grey.shade300,
                         ),
                       ),
                       child: Row(
@@ -318,7 +330,9 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
                             'Consulting Gemini models...',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                              color: isDark
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade700,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -347,7 +361,9 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.cyanAccent : Colors.indigo.shade800,
+                            color: isDark
+                                ? Colors.cyanAccent
+                                : Colors.indigo.shade800,
                           ),
                         ),
                         backgroundColor: isDark
@@ -374,7 +390,9 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
                 color: isDark ? const Color(0xFF161925) : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade300,
+                  color: isDark
+                      ? Colors.blueGrey.shade900
+                      : Colors.grey.shade300,
                 ),
               ),
               child: Row(
@@ -402,7 +420,9 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
                           color: hasText ? accentColor : Colors.grey,
                           size: 20,
                         ),
-                        onPressed: hasText ? () => _sendMessage(_inputController.text) : null,
+                        onPressed: hasText
+                            ? () => _sendMessage(_inputController.text)
+                            : null,
                       );
                     },
                   ),
@@ -423,7 +443,9 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
     int index,
   ) {
     final isUser = msg.isUser;
-    final alignment = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    final alignment = isUser
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start;
     final bubbleColor = isUser
         ? (isDark ? const Color(0xFF263238) : Colors.indigo.shade50)
         : (isDark ? const Color(0xFF161925) : Colors.grey.shade50);
@@ -480,7 +502,9 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
         crossAxisAlignment: alignment,
         children: [
           Row(
-            mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!isUser) ...[
@@ -493,14 +517,21 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
               ],
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: bubbleColor,
                     borderRadius: border,
                     border: Border.all(
                       color: isUser
-                          ? (isDark ? Colors.cyan.withOpacity(0.3) : Colors.indigo.shade100)
-                          : (isDark ? Colors.blueGrey.shade900 : Colors.grey.shade200),
+                          ? (isDark
+                                ? Colors.cyan.withOpacity(0.3)
+                                : Colors.indigo.shade100)
+                          : (isDark
+                                ? Colors.blueGrey.shade900
+                                : Colors.grey.shade200),
                     ),
                   ),
                   child: isUser
@@ -537,7 +568,8 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
               padding: const EdgeInsets.only(left: 32.0, top: 2.0),
               child: Consumer<TextToSpeechService>(
                 builder: (context, tts, _) {
-                  final isThisSpeaking = tts.isSpeaking && tts.currentUtterance == utteranceId;
+                  final isThisSpeaking =
+                      tts.isSpeaking && tts.currentUtterance == utteranceId;
                   return InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () {
@@ -548,21 +580,30 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
                       }
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                        vertical: 4.0,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isThisSpeaking ? Icons.stop_circle_outlined : Icons.volume_up_outlined,
+                            isThisSpeaking
+                                ? Icons.stop_circle_outlined
+                                : Icons.volume_up_outlined,
                             size: 14,
-                            color: isThisSpeaking ? Colors.redAccent : accentColor,
+                            color: isThisSpeaking
+                                ? Colors.redAccent
+                                : accentColor,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             isThisSpeaking ? 'Stop Speaking' : 'Read Aloud',
                             style: TextStyle(
                               fontSize: 10,
-                              color: isThisSpeaking ? Colors.redAccent : Colors.grey,
+                              color: isThisSpeaking
+                                  ? Colors.redAccent
+                                  : Colors.grey,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

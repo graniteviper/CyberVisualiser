@@ -72,30 +72,18 @@ void main() {
     // Verify Dashboard signature
     expect(find.text('Liquid Galaxy Dashboard'), findsOneWidget);
 
-    // Tap on the drawer hamburger menu button to open drawer
-    await tester.tap(find.byIcon(Icons.menu).first);
-    await tester.pumpAndSettle();
-
-    // Verify icons inside the open drawer
-    expect(find.byIcon(Icons.dashboard_rounded), findsOneWidget);
+    // Verify Settings tab is accessible in the bottom navigation bar
     expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
 
-    // Tap on Connection Settings in the drawer
-    await tester.tap(find.text('Connection Settings'));
+    // Tap on the Settings icon/text in the bottom navigation bar
+    await tester.tap(find.byIcon(Icons.settings_rounded));
     await tester.pumpAndSettle();
 
     // Verify it navigates to settings screen
-    expect(find.text('Liquid Galaxy Settings'), findsOneWidget);
+    expect(find.text('SETTINGS'), findsOneWidget);
 
-    // Tap on the drawer hamburger menu button to open drawer again
-    await tester.tap(find.byIcon(Icons.menu).first);
-    await tester.pumpAndSettle();
-
-    // Verify drawer header is shown
-    expect(find.text('Cyber Threat Intelligence'), findsOneWidget);
-
-    // Tap on the Track IP item inside the drawer to navigate
-    await tester.tap(find.text('Track IP').last);
+    // Tap on the Track IP icon/text in the bottom navigation bar
+    await tester.tap(find.byIcon(Icons.location_on_rounded));
     await tester.pumpAndSettle();
 
     // Verify it navigates to the Track IP screen

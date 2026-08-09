@@ -23,13 +23,11 @@ class StatisticsCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF161925) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark
-                ? Colors.blueGrey.shade900.withOpacity(0.5)
-                : Colors.grey.shade200,
-            width: 1,
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            width: 1.2,
           ),
           boxShadow: [
             BoxShadow(

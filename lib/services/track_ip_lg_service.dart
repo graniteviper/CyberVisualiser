@@ -85,7 +85,9 @@ class TrackIpLgService {
   /// Sends the main KML displaying the tracked IP source marker, victim/reporter markers, and curved vectors.
   Future<bool> sendTrackIpKML(AbuseIpReport report) async {
     if (!_lgService.isConnected) {
-      debugPrint('cyber visualiser TrackIP LG: Liquid Galaxy is not connected.');
+      debugPrint(
+        'cyber visualiser TrackIP LG: Liquid Galaxy is not connected.',
+      );
       return false;
     }
 
@@ -306,7 +308,9 @@ class TrackIpLgService {
       await _lgService.flyTo(lookAt);
       return true;
     } catch (e) {
-      debugPrint('cyber visualiser TrackIP LG Error: Failed to project KML: $e');
+      debugPrint(
+        'cyber visualiser TrackIP LG Error: Failed to project KML: $e',
+      );
       return false;
     }
   }
@@ -511,7 +515,9 @@ fi
       await _lgService.forceRefresh(rightMost);
       return true;
     } catch (e) {
-      debugPrint('cyber visualiser TrackIP LG Error: Failed to write overlay: $e');
+      debugPrint(
+        'cyber visualiser TrackIP LG Error: Failed to write overlay: $e',
+      );
       return false;
     }
   }
@@ -546,7 +552,9 @@ fi
       await _lgService.forceRefresh(rightMost);
       return true;
     } catch (e) {
-      debugPrint('cyber visualiser TrackIP LG Error: Failed to clear visuals: $e');
+      debugPrint(
+        'cyber visualiser TrackIP LG Error: Failed to clear visuals: $e',
+      );
       return false;
     }
   }
