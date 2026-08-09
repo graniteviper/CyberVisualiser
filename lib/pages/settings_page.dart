@@ -4,6 +4,7 @@ import '../services/lg_service.dart';
 import '../theme/theme_notifier.dart';
 import '../utils/config.dart';
 import '../widgets/qr_scanner.dart';
+import '../screens/onboarding_screen.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -440,6 +441,41 @@ class _SettingsPageState extends State<SettingsPage> {
                           themeNotifier.setThemeMode(value);
                         }
                       },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'App Tutorial & Setup',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Replay the onboarding tour to review feature highlights or reconfigure settings.',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.rocket_launch_rounded),
+                        label: const Text('Replay Onboarding Tour'),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const OnboardingScreen(isReplaying: true),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),

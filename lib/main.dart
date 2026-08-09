@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/lg_service.dart';
 import 'services/lg_adapter.dart';
 import 'services/honeylabs_service.dart';
@@ -14,6 +15,7 @@ import 'providers/track_ip_provider.dart';
 import 'theme/theme_notifier.dart';
 import 'theme/app_theme.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'pages/settings_page.dart';
 import 'pages/track_ip_page.dart';
 import 'pages/simulate_attack_page.dart';
@@ -34,6 +36,9 @@ void main() async {
   final abuseDbService = AbuseIpDbService();
   final trackRepository = TrackIpRepository(abuseDbService);
   final historicalRepository = HistoricalRepository();
+
+  final prefs = await SharedPreferences.getInstance();
+  final completedOnboarding = prefs.getBool('completed_onboarding') ?? false;
 
   runApp(
     MultiProvider(
@@ -62,13 +67,14 @@ void main() async {
           create: (_) => HistoricalProvider(historicalRepository),
         ),
       ],
-      child: const MainApp(),
+      child: MainApp(completedOnboarding: completedOnboarding),
     ),
   );
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final bool completedOnboarding;
+  const MainApp({super.key, required this.completedOnboarding});
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +84,7 @@ class MainApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeNotifier.themeMode,
-      home: const AppShell(),
+      home: completedOnboarding ? const AppShell() : const OnboardingScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
