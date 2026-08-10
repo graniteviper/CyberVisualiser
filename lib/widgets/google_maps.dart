@@ -17,7 +17,7 @@ class LookAt {
     return '<LookAt>'
         '<longitude>$longitude</longitude>'
         '<latitude>$latitude</latitude>'
-        '<altitude>0</altitude>'
+        '<altitude>10</altitude>'
         '<heading>$heading</heading>'
         '<tilt>$tilt</tilt>'
         '<range>$range</range>'
