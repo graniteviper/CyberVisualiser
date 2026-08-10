@@ -315,6 +315,32 @@ class TrackIpLgService {
     }
   }
 
+  /// Flies the camera to look at the specified coordinate.
+  Future<void> flyToCoordinate({
+    required double latitude,
+    required double longitude,
+    required double range,
+    required double tilt,
+    required double heading,
+  }) async {
+    try {
+      final lookAt = '''<LookAt>
+          <longitude>$longitude</longitude>
+          <latitude>$latitude</latitude>
+          <altitude>0</altitude>
+          <heading>$heading</heading>
+          <tilt>$tilt</tilt>
+          <range>$range</range>
+          <gx:altitudeMode>relativeToGround</gx:altitudeMode>
+        </LookAt>''';
+      await _lgService.flyTo(lookAt);
+    } catch (e) {
+      debugPrint(
+        'cyber visualiser TrackIP LG Error: Failed to fly to coordinate: $e',
+      );
+    }
+  }
+
   /// Writes text content directly to a remote file via SSH without touching kmls.txt.
   Future<bool> _writeFileDirectly(String content, String fileName) async {
     final command = "cat << 'EOF' > /var/www/html/$fileName\n$content\nEOF";

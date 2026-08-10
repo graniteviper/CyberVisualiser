@@ -56,6 +56,64 @@ Keep it professional, structured with Markdown headers and bullet points, and co
 ''';
   }
 
+  /// Generates a prompt to instruct Gemini to write a step-by-step narrative script for a 3D tour.
+  static String fillTourScriptPrompt(AbuseIpReport report) {
+    final Map<String, List<AbuseReportItem>> reportsByCountry = {};
+    for (final r in report.reports) {
+      if (r.reporterCountryCode.isNotEmpty) {
+        reportsByCountry.putIfAbsent(r.reporterCountryCode, () => []).add(r);
+      }
+    }
+
+    final StringBuffer logBuffer = StringBuffer();
+    reportsByCountry.forEach((countryCode, list) {
+      final countryName = list.first.reporterCountryName.isNotEmpty
+          ? list.first.reporterCountryName
+          : countryCode;
+      logBuffer.writeln('- Region: $countryName ($countryCode) - ${list.length} report(s). Details:');
+      for (var item in list.take(2)) {
+        logBuffer.writeln('  * Categories: ${item.categoryNames.join(", ")}');
+        if (item.comment.trim().isNotEmpty) {
+          logBuffer.writeln('  * Comment: ${item.comment.trim()}');
+        }
+      }
+    });
+
+    return '''
+You are an expert cyber threat intelligence narrator. You are generating a script for a 3D audio-visual camera tour of a tracked IP on a map.
+The tour consists of 3 stages:
+1. Target Overview: Introduction to the malicious source IP and its general characteristics.
+2. Reporter Regions: Visiting locations on the globe that reported this IP, describing their logs and comments.
+3. Tour Conclusion: A summary of the threat level, attribution, and defense recommendations.
+
+Here is the telemetry data:
+- IP Address: ${report.ipAddress}
+- ISP: ${report.isp}
+- Domain: ${report.domain.isNotEmpty ? report.domain : "N/A"}
+- Origin Country: ${report.countryName} (${report.countryCode})
+- Abuse Confidence Score: ${report.abuseConfidenceScore}%
+- Total Reports: ${report.totalReports}
+
+Geographic reports submitted against this IP:
+${logBuffer.isNotEmpty ? logBuffer.toString() : "No reports logged."}
+
+INSTRUCTIONS:
+Generate a clean JSON object containing the narration script for each tour step.
+The output MUST be a valid JSON object only. Do NOT enclose it in markdown blocks like ```json ... ```. Just return the raw JSON text.
+Ensure all quotes are escaped properly. The JSON must strictly match this schema:
+{
+  "overview": "Narration script for the IP overview. Introduce the IP address, ISP, origin, and threat severity.",
+  "regions": [
+    {
+      "countryCode": "US", // Match from telemetry country codes
+      "narration": "Narration script specifically discussing the attacks/reports from this region, using the details provided above."
+    }
+  ],
+  "conclusion": "Narration script summarizing the threat level and giving recommendations."
+}
+''';
+  }
+
   /// Generates a detailed prompt to summarize recent events of a specific attack category using Gemini
   static String fillCategoryAnalysisTemplate(
     String category,

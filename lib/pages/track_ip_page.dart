@@ -660,8 +660,10 @@ class _TrackIpPageState extends State<TrackIpPage>
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       tooltip: 'Close Card and Clear Visuals',
-                      onPressed: () =>
-                          provider.clearState(lgService: trackLgService),
+                      onPressed: () => provider.clearState(
+                        lgService: trackLgService,
+                        ttsService: context.read<TextToSpeechService>(),
+                      ),
                     ),
                   ],
                 ),
@@ -756,6 +758,8 @@ class _TrackIpPageState extends State<TrackIpPage>
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        _buildTourPlayerCard(provider, trackLgService, isDark),
         if (provider.isAnalyzing)
           Card(
             elevation: 2,
@@ -1060,6 +1064,412 @@ class _TrackIpPageState extends State<TrackIpPage>
             },
           ),
       ],
+    );
+  }
+
+  Widget _buildTourPlayerCard(
+    TrackIpProvider provider,
+    TrackIpLgService trackLgService,
+    bool isDark,
+  ) {
+    final ttsService = context.watch<TextToSpeechService>();
+    final activeColor = isDark ? const Color(0xFF00E5FF) : const Color(0xFF3B82F6);
+    final cardBg = isDark ? const Color(0xFF0D1124) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF1F294D) : Colors.grey.shade200;
+
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: provider.isTourPlaying ? activeColor.withOpacity(0.5) : borderColor,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: provider.isTourPlaying
+                ? activeColor.withOpacity(0.08)
+                : Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header Row
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: provider.isTourPlaying
+                      ? activeColor.withOpacity(0.12)
+                      : (isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.explore_rounded,
+                  color: provider.isTourPlaying ? activeColor : Colors.grey,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '3D GEOGRAPHIC TOUR',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: provider.isTourPlaying ? activeColor : (isDark ? Colors.white70 : Colors.black87),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    if (provider.isTourPlaying)
+                      Text(
+                        'Step ${provider.currentTourStepIndex + 1} of ${provider.tourSteps.length}: ${provider.tourSteps[provider.currentTourStepIndex]['title']}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      )
+                    else
+                      Text(
+                        'Narrated Liquid Galaxy Tour',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (provider.isTourPlaying) ...[
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: provider.isTourPaused ? Colors.amber : Colors.redAccent,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          if (!provider.isTourPaused)
+                            BoxShadow(
+                              color: Colors.redAccent.withOpacity(0.6 * _pulseController.value),
+                              blurRadius: 6 * _pulseController.value,
+                              spreadRadius: 1 * _pulseController.value,
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  provider.isTourPaused ? 'PAUSED' : 'LIVE',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: provider.isTourPaused ? Colors.amber : Colors.redAccent,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Loading State
+          if (provider.isTourScriptLoading)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: Center(
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Gemini is scripting your 3D tour narration...',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+
+          // Script Not Generated Yet State
+          else if (provider.tourSteps.isEmpty) ...[
+            Text(
+              'Explore the cyber threat intelligence coordinates interactively. '
+              'Gemini will formulate a customized narration script linking origin networks and targets, '
+              'while Liquid Galaxy dynamically flies and orbits around each reporting region.',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: activeColor.withOpacity(0.12),
+                foregroundColor: activeColor,
+                side: BorderSide(color: activeColor.withOpacity(0.3), width: 1.2),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: () => provider.generateTour(context.read<GeminiService>()),
+              icon: const Icon(Icons.auto_awesome, size: 18),
+              label: const Text(
+                'Generate 3D Audio Tour',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ]
+
+          // Tour Ready (Not Playing) State
+          else if (!provider.isTourPlaying) ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF141A33) : Colors.blue.shade50.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF232D5C) : Colors.blue.shade100,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, color: activeColor, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '3D Tour script generated successfully with ${provider.tourSteps.length} stops.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey.shade300 : Colors.blue.shade900,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: activeColor,
+                      foregroundColor: isDark ? Colors.black : Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: () => provider.startTour(ttsService, trackLgService),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                    label: const Text(
+                      'Start 3D Tour',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(0.12),
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.all(14),
+                  ),
+                  icon: const Icon(Icons.refresh, size: 20),
+                  tooltip: 'Regenerate Tour',
+                  onPressed: () => provider.generateTour(context.read<GeminiService>()),
+                ),
+              ],
+            ),
+          ]
+
+          // Active Tour Player
+          else ...[
+            // Progress Bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (provider.currentTourStepIndex + 1) / provider.tourSteps.length,
+                backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                minHeight: 5,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Subtitle Card / Narration Text
+            Container(
+              padding: const EdgeInsets.all(16),
+              constraints: const BoxConstraints(minHeight: 80),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF13172E) : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF1E264D) : Colors.grey.shade200,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'NARRATION SUBTITLES',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      if (ttsService.isSpeaking && !provider.isTourPaused)
+                        Row(
+                          children: List.generate(
+                            4,
+                            (index) => Container(
+                              margin: const EdgeInsets.only(left: 2),
+                              width: 3,
+                              height: 10 + (index % 2 == 0 ? 4 : 0),
+                              decoration: BoxDecoration(
+                                color: activeColor,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    provider.tourSteps[provider.currentTourStepIndex]['narration'],
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: isDark ? Colors.grey.shade200 : Colors.black87,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Player Controllers
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Back
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100,
+                    foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: const Icon(Icons.skip_previous_rounded, size: 20),
+                  onPressed: provider.currentTourStepIndex == 0
+                      ? null
+                      : () => provider.previousStep(ttsService, trackLgService),
+                ),
+                const SizedBox(width: 14),
+
+                // Play / Pause Toggle
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: activeColor,
+                    foregroundColor: isDark ? Colors.black : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  icon: Icon(
+                    provider.isTourPaused
+                        ? Icons.play_arrow_rounded
+                        : Icons.pause_rounded,
+                    size: 30,
+                  ),
+                  onPressed: () {
+                    if (provider.isTourPaused) {
+                      provider.resumeTour(ttsService, trackLgService);
+                    } else {
+                      provider.pauseTour(ttsService);
+                    }
+                  },
+                ),
+                const SizedBox(width: 14),
+
+                // Next
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100,
+                    foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: Icon(
+                    provider.currentTourStepIndex == provider.tourSteps.length - 1
+                        ? Icons.check_rounded
+                        : Icons.skip_next_rounded,
+                    size: 20,
+                  ),
+                  onPressed: () => provider.nextStep(ttsService, trackLgService),
+                ),
+                const SizedBox(width: 24),
+
+                // Stop
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(0.12),
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent, width: 1.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: const Icon(Icons.stop_rounded, size: 20),
+                  onPressed: () => provider.stopTour(ttsService),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 
