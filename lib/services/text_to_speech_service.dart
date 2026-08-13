@@ -6,6 +6,8 @@ class TextToSpeechService extends ChangeNotifier {
   bool _isSpeaking = false;
   String? _currentUtterance;
 
+  VoidCallback? onCompletion;
+
   bool get isSpeaking => _isSpeaking;
   String? get currentUtterance => _currentUtterance;
 
@@ -23,6 +25,7 @@ class TextToSpeechService extends ChangeNotifier {
       _isSpeaking = false;
       _currentUtterance = null;
       notifyListeners();
+      onCompletion?.call();
     });
 
     _flutterTts.setCancelHandler(() {

@@ -356,14 +356,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open navigation drawer',
-          ),
-          const SizedBox(width: 12),
           Icon(
             Icons.shield,
             color: isDark ? Colors.cyanAccent : Colors.amberAccent,
@@ -375,7 +367,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'HONEYVISION',
+                  'cyber visualiser',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,

@@ -49,7 +49,7 @@ class AppConfig {
       }
     } catch (e) {
       // Log error, fallback remains empty
-      print('HoneyVision Config Error: Failed to load .env file: $e');
+      print('cyber visualiser Config Error: Failed to load .env file: $e');
     }
 
     try {
@@ -58,7 +58,7 @@ class AppConfig {
       userAbuseIpDbApiKey = prefs.getString(_keyUserAbuseIpDbApiKey) ?? '';
       userGeminiApiKey = prefs.getString(_keyUserGeminiApiKey) ?? '';
     } catch (e) {
-      print('HoneyVision Config Error: Failed to load user API keys: $e');
+      print('cyber visualiser Config Error: Failed to load user API keys: $e');
     }
   }
 
@@ -78,7 +78,7 @@ class AppConfig {
       await prefs.setString(_keyUserAbuseIpDbApiKey, userAbuseIpDbApiKey);
       await prefs.setString(_keyUserGeminiApiKey, userGeminiApiKey);
     } catch (e) {
-      print('HoneyVision Config Error: Failed to save user API keys: $e');
+      print('cyber visualiser Config Error: Failed to save user API keys: $e');
     }
   }
 }

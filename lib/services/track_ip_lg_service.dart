@@ -85,7 +85,9 @@ class TrackIpLgService {
   /// Sends the main KML displaying the tracked IP source marker, victim/reporter markers, and curved vectors.
   Future<bool> sendTrackIpKML(AbuseIpReport report) async {
     if (!_lgService.isConnected) {
-      debugPrint('HoneyVision TrackIP LG: Liquid Galaxy is not connected.');
+      debugPrint(
+        'cyber visualiser TrackIP LG: Liquid Galaxy is not connected.',
+      );
       return false;
     }
 
@@ -306,8 +308,36 @@ class TrackIpLgService {
       await _lgService.flyTo(lookAt);
       return true;
     } catch (e) {
-      debugPrint('HoneyVision TrackIP LG Error: Failed to project KML: $e');
+      debugPrint(
+        'cyber visualiser TrackIP LG Error: Failed to project KML: $e',
+      );
       return false;
+    }
+  }
+
+  /// Flies the camera to look at the specified coordinate.
+  Future<void> flyToCoordinate({
+    required double latitude,
+    required double longitude,
+    required double range,
+    required double tilt,
+    required double heading,
+  }) async {
+    try {
+      final lookAt = '''<LookAt>
+          <longitude>$longitude</longitude>
+          <latitude>$latitude</latitude>
+          <altitude>0</altitude>
+          <heading>$heading</heading>
+          <tilt>$tilt</tilt>
+          <range>$range</range>
+          <gx:altitudeMode>relativeToGround</gx:altitudeMode>
+        </LookAt>''';
+      await _lgService.flyTo(lookAt);
+    } catch (e) {
+      debugPrint(
+        'cyber visualiser TrackIP LG Error: Failed to fly to coordinate: $e',
+      );
     }
   }
 
@@ -511,7 +541,9 @@ fi
       await _lgService.forceRefresh(rightMost);
       return true;
     } catch (e) {
-      debugPrint('HoneyVision TrackIP LG Error: Failed to write overlay: $e');
+      debugPrint(
+        'cyber visualiser TrackIP LG Error: Failed to write overlay: $e',
+      );
       return false;
     }
   }
@@ -546,7 +578,9 @@ fi
       await _lgService.forceRefresh(rightMost);
       return true;
     } catch (e) {
-      debugPrint('HoneyVision TrackIP LG Error: Failed to clear visuals: $e');
+      debugPrint(
+        'cyber visualiser TrackIP LG Error: Failed to clear visuals: $e',
+      );
       return false;
     }
   }

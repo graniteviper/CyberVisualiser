@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/track_ip_provider.dart';
@@ -14,11 +15,25 @@ class TrackIpPage extends StatefulWidget {
   State<TrackIpPage> createState() => _TrackIpPageState();
 }
 
-class _TrackIpPageState extends State<TrackIpPage> {
+class _TrackIpPageState extends State<TrackIpPage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _ipController = TextEditingController();
   double _maxAgeInDays = 5.0;
   TextToSpeechService? _ttsService;
+  late final AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      _pulseController.repeat(reverse: true);
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -30,6 +45,7 @@ class _TrackIpPageState extends State<TrackIpPage> {
   void dispose() {
     _ipController.dispose();
     _ttsService?.stop();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -121,7 +137,7 @@ class _TrackIpPageState extends State<TrackIpPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeaderBanner(isDark),
+            _buildHeaderBanner(context, isDark),
             _buildRigConnectionBar(lgService, isDark),
             Expanded(
               child: SingleChildScrollView(
@@ -142,55 +158,58 @@ class _TrackIpPageState extends State<TrackIpPage> {
     );
   }
 
-  Widget _buildHeaderBanner(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F111A) : Colors.indigo.shade900,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? Colors.blue.shade900.withOpacity(0.5)
-                : Colors.indigo.shade800,
-            width: 1,
-          ),
-        ),
-      ),
+  Widget _buildHeaderBanner(BuildContext context, bool isDark) {
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subtitleColor = isDark ? Colors.grey.shade400 : Colors.black54;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open navigation drawer',
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0D1124) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? const Color(0xFF00E5FF).withOpacity(0.05)
+                      : Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.location_on_rounded,
+              color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF3B82F6),
+              size: 28,
+            ),
           ),
-          const SizedBox(width: 12),
-          Icon(
-            Icons.location_on_rounded,
-            color: isDark ? Colors.cyanAccent : Colors.amberAccent,
-            size: 32,
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'IP TRACKER',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: titleColor,
                     letterSpacing: 2.0,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  'Query AbuseIPDB threat intel and project attack vectors',
+                  'Threat Intel Profiler & Geolocator',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.grey.shade400 : Colors.white70,
-                    fontWeight: FontWeight.w400,
+                    color: subtitleColor,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -202,52 +221,85 @@ class _TrackIpPageState extends State<TrackIpPage> {
   }
 
   Widget _buildRigConnectionBar(LgService lgService, bool isDark) {
-    final statusColor = lgService.isConnected ? Colors.green : Colors.red;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: isDark ? const Color(0xFF141622) : Colors.grey.shade200,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Rig Server: ${lgService.isConnected ? "CONNECTED" : "DISCONNECTED"} (${lgService.connectionModel.ip}:${lgService.connectionModel.port})',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+    final statusColor = lgService.isConnected
+        ? const Color(0xFF00FFC2)
+        : Colors.redAccent;
+    final statusText = lgService.isConnected ? "Rig Connected" : "Rig Offline";
+    final activeGlowColor = lgService.isConnected
+        ? const Color(0xFF00FFC2)
+        : Colors.redAccent;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
           ),
-          if (!lgService.isConnected)
-            const Text(
-              'Visualization Offline',
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: activeGlowColor.withOpacity(
+                              0.6 * _pulseController.value,
+                            ),
+                            blurRadius: 8 * _pulseController.value,
+                            spreadRadius: 2 * _pulseController.value,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '$statusText • ${lgService.connectionModel.ip}:${lgService.connectionModel.port}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              lgService.isConnected ? 'Ready' : 'Offline',
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
-            )
-          else
-            const Text(
-              'Visualization Ready',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.green,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
+                color: lgService.isConnected
+                    ? const Color(0xFF00FFC2)
+                    : Colors.grey,
+                letterSpacing: 0.5,
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -257,18 +309,31 @@ class _TrackIpPageState extends State<TrackIpPage> {
     TrackIpLgService trackLgService,
     bool isDark,
   ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isDark
-              ? Colors.blueGrey.shade900.withOpacity(0.5)
-              : Colors.grey.shade300,
+    final activeColor = isDark
+        ? const Color(0xFF00E5FF)
+        : const Color(0xFF3B82F6);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.all(20.0),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.02),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -279,48 +344,60 @@ class _TrackIpPageState extends State<TrackIpPage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.blue.shade200 : Colors.indigo.shade800,
+                  color: isDark
+                      ? const Color(0xFF00E5FF)
+                      : const Color(0xFF3B82F6),
                   letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _ipController,
                 validator: _validateIp,
                 keyboardType: TextInputType.url,
                 autocorrect: false,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Target IP Address',
                   hintText: 'e.g. 213.209.159.227',
-                  prefixIcon: Icon(Icons.search_rounded),
-                  border: OutlineInputBorder(),
-                  isDense: true,
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: isDark
+                        ? const Color(0xFF00E5FF).withOpacity(0.7)
+                        : const Color(0xFF3B82F6),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Search Window (Days):',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                      horizontal: 10,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.blue.shade900.withOpacity(0.3)
-                          : Colors.indigo.shade50,
-                      borderRadius: BorderRadius.circular(8),
+                          ? const Color(0xFF00E5FF).withOpacity(0.12)
+                          : const Color(0xFF3B82F6).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '${_maxAgeInDays.toInt()} Days',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? const Color(0xFF00E5FF)
+                            : const Color(0xFF3B82F6),
                       ),
                     ),
                   ),
@@ -331,6 +408,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                 min: 1.0,
                 max: 30.0,
                 divisions: 29,
+                activeColor: activeColor,
+                inactiveColor: isDark
+                    ? Colors.blueGrey.shade800
+                    : Colors.grey.shade300,
                 label: '${_maxAgeInDays.toInt()} days',
                 onChanged: provider.isLoading
                     ? null
@@ -346,13 +427,12 @@ class _TrackIpPageState extends State<TrackIpPage> {
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: isDark
-                            ? Colors.blue.shade900
-                            : Colors.indigo.shade700,
-                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: activeColor,
+                        foregroundColor: isDark ? Colors.black : Colors.white,
+                        minimumSize: const Size(0, 48),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       onPressed: provider.isLoading
@@ -367,10 +447,16 @@ class _TrackIpPageState extends State<TrackIpPage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Icon(Icons.location_searching_rounded),
+                          : const Icon(
+                              Icons.location_searching_rounded,
+                              size: 20,
+                            ),
                       label: const Text(
                         'Track IP Address',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -378,14 +464,18 @@ class _TrackIpPageState extends State<TrackIpPage> {
                     const SizedBox(width: 12),
                     IconButton.filled(
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.red.shade900.withOpacity(0.8),
-                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.redAccent.withOpacity(0.12),
+                        foregroundColor: Colors.redAccent,
+                        side: const BorderSide(
+                          color: Colors.redAccent,
+                          width: 1.2,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         padding: const EdgeInsets.all(12),
                       ),
-                      icon: const Icon(Icons.layers_clear),
+                      icon: const Icon(Icons.layers_clear, size: 20),
                       tooltip: 'Clear KML from Liquid Galaxy',
                       onPressed: provider.isLoading
                           ? null
@@ -397,13 +487,21 @@ class _TrackIpPageState extends State<TrackIpPage> {
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   backgroundColor: isDark
-                      ? Colors.teal.shade900
-                      : Colors.teal.shade700,
-                  foregroundColor: Colors.white,
+                      ? const Color(0xFF8A2BE2).withOpacity(0.12)
+                      : Colors.indigo.shade50,
+                  foregroundColor: isDark
+                      ? const Color(0xFFE040FB)
+                      : Colors.indigo,
+                  side: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF8A2BE2).withOpacity(0.3)
+                        : Colors.indigo.shade200,
+                  ),
+                  minimumSize: const Size(0, 48),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 onPressed: (provider.isLoading || provider.isAnalyzing)
@@ -422,10 +520,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.psychology_rounded),
+                    : const Icon(Icons.psychology_rounded, size: 20),
                 label: const Text(
                   'Analyse with Gemini',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
             ],
@@ -562,8 +660,10 @@ class _TrackIpPageState extends State<TrackIpPage> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       tooltip: 'Close Card and Clear Visuals',
-                      onPressed: () =>
-                          provider.clearState(lgService: trackLgService),
+                      onPressed: () => provider.clearState(
+                        lgService: trackLgService,
+                        ttsService: context.read<TextToSpeechService>(),
+                      ),
                     ),
                   ],
                 ),
@@ -658,6 +758,8 @@ class _TrackIpPageState extends State<TrackIpPage> {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        _buildTourPlayerCard(provider, trackLgService, isDark),
         if (provider.isAnalyzing)
           Card(
             elevation: 2,
@@ -962,6 +1064,412 @@ class _TrackIpPageState extends State<TrackIpPage> {
             },
           ),
       ],
+    );
+  }
+
+  Widget _buildTourPlayerCard(
+    TrackIpProvider provider,
+    TrackIpLgService trackLgService,
+    bool isDark,
+  ) {
+    final ttsService = context.watch<TextToSpeechService>();
+    final activeColor = isDark ? const Color(0xFF00E5FF) : const Color(0xFF3B82F6);
+    final cardBg = isDark ? const Color(0xFF0D1124) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF1F294D) : Colors.grey.shade200;
+
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: provider.isTourPlaying ? activeColor.withOpacity(0.5) : borderColor,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: provider.isTourPlaying
+                ? activeColor.withOpacity(0.08)
+                : Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header Row
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: provider.isTourPlaying
+                      ? activeColor.withOpacity(0.12)
+                      : (isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.explore_rounded,
+                  color: provider.isTourPlaying ? activeColor : Colors.grey,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '3D GEOGRAPHIC TOUR',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: provider.isTourPlaying ? activeColor : (isDark ? Colors.white70 : Colors.black87),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    if (provider.isTourPlaying)
+                      Text(
+                        'Step ${provider.currentTourStepIndex + 1} of ${provider.tourSteps.length}: ${provider.tourSteps[provider.currentTourStepIndex]['title']}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      )
+                    else
+                      Text(
+                        'Narrated Liquid Galaxy Tour',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (provider.isTourPlaying) ...[
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: provider.isTourPaused ? Colors.amber : Colors.redAccent,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          if (!provider.isTourPaused)
+                            BoxShadow(
+                              color: Colors.redAccent.withOpacity(0.6 * _pulseController.value),
+                              blurRadius: 6 * _pulseController.value,
+                              spreadRadius: 1 * _pulseController.value,
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  provider.isTourPaused ? 'PAUSED' : 'LIVE',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: provider.isTourPaused ? Colors.amber : Colors.redAccent,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Loading State
+          if (provider.isTourScriptLoading)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: Center(
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Gemini is scripting your 3D tour narration...',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+
+          // Script Not Generated Yet State
+          else if (provider.tourSteps.isEmpty) ...[
+            Text(
+              'Explore the cyber threat intelligence coordinates interactively. '
+              'Gemini will formulate a customized narration script linking origin networks and targets, '
+              'while Liquid Galaxy dynamically flies and orbits around each reporting region.',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: activeColor.withOpacity(0.12),
+                foregroundColor: activeColor,
+                side: BorderSide(color: activeColor.withOpacity(0.3), width: 1.2),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: () => provider.generateTour(context.read<GeminiService>()),
+              icon: const Icon(Icons.auto_awesome, size: 18),
+              label: const Text(
+                'Generate 3D Audio Tour',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ]
+
+          // Tour Ready (Not Playing) State
+          else if (!provider.isTourPlaying) ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF141A33) : Colors.blue.shade50.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF232D5C) : Colors.blue.shade100,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, color: activeColor, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '3D Tour script generated successfully with ${provider.tourSteps.length} stops.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey.shade300 : Colors.blue.shade900,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: activeColor,
+                      foregroundColor: isDark ? Colors.black : Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: () => provider.startTour(ttsService, trackLgService),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                    label: const Text(
+                      'Start 3D Tour',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(0.12),
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.all(14),
+                  ),
+                  icon: const Icon(Icons.refresh, size: 20),
+                  tooltip: 'Regenerate Tour',
+                  onPressed: () => provider.generateTour(context.read<GeminiService>()),
+                ),
+              ],
+            ),
+          ]
+
+          // Active Tour Player
+          else ...[
+            // Progress Bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (provider.currentTourStepIndex + 1) / provider.tourSteps.length,
+                backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                minHeight: 5,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Subtitle Card / Narration Text
+            Container(
+              padding: const EdgeInsets.all(16),
+              constraints: const BoxConstraints(minHeight: 80),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF13172E) : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF1E264D) : Colors.grey.shade200,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'NARRATION SUBTITLES',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      if (ttsService.isSpeaking && !provider.isTourPaused)
+                        Row(
+                          children: List.generate(
+                            4,
+                            (index) => Container(
+                              margin: const EdgeInsets.only(left: 2),
+                              width: 3,
+                              height: 10 + (index % 2 == 0 ? 4 : 0),
+                              decoration: BoxDecoration(
+                                color: activeColor,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    provider.tourSteps[provider.currentTourStepIndex]['narration'],
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: isDark ? Colors.grey.shade200 : Colors.black87,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Player Controllers
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Back
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100,
+                    foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: const Icon(Icons.skip_previous_rounded, size: 20),
+                  onPressed: provider.currentTourStepIndex == 0
+                      ? null
+                      : () => provider.previousStep(ttsService, trackLgService),
+                ),
+                const SizedBox(width: 14),
+
+                // Play / Pause Toggle
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: activeColor,
+                    foregroundColor: isDark ? Colors.black : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  icon: Icon(
+                    provider.isTourPaused
+                        ? Icons.play_arrow_rounded
+                        : Icons.pause_rounded,
+                    size: 30,
+                  ),
+                  onPressed: () {
+                    if (provider.isTourPaused) {
+                      provider.resumeTour(ttsService, trackLgService);
+                    } else {
+                      provider.pauseTour(ttsService);
+                    }
+                  },
+                ),
+                const SizedBox(width: 14),
+
+                // Next
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100,
+                    foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: Icon(
+                    provider.currentTourStepIndex == provider.tourSteps.length - 1
+                        ? Icons.check_rounded
+                        : Icons.skip_next_rounded,
+                    size: 20,
+                  ),
+                  onPressed: () => provider.nextStep(ttsService, trackLgService),
+                ),
+                const SizedBox(width: 24),
+
+                // Stop
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(0.12),
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent, width: 1.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: const Icon(Icons.stop_rounded, size: 20),
+                  onPressed: () => provider.stopTour(ttsService),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 

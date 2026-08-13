@@ -1,9 +1,14 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:provider/provider.dart';
 import '../services/lg_service.dart';
 import '../services/gemini_service.dart';
+import '../services/text_to_speech_service.dart';
 import '../templates/simulation_prompt_template.dart';
+import '../templates/simulation_kml_generator.dart';
 
 class SimulateAttackPage extends StatefulWidget {
   const SimulateAttackPage({super.key});
@@ -12,7 +17,8 @@ class SimulateAttackPage extends StatefulWidget {
   State<SimulateAttackPage> createState() => _SimulateAttackPageState();
 }
 
-class _SimulateAttackPageState extends State<SimulateAttackPage> {
+class _SimulateAttackPageState extends State<SimulateAttackPage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _promptController = TextEditingController();
 
@@ -21,6 +27,9 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
   String _generatedKml = '';
   String _errorMessage = '';
   bool _isVisualized = false;
+  String _simulationSummary = '';
+  TextToSpeechService? _ttsService;
+  late final AnimationController _pulseController;
 
   final List<String> _presets = [
     'show me a ddos attack from multiple locations to a server based in usa',
@@ -30,15 +39,35 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      _pulseController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ttsService = Provider.of<TextToSpeechService>(context, listen: false);
+  }
+
+  @override
   void dispose() {
     _promptController.dispose();
+    _ttsService?.stop();
+    _pulseController.dispose();
     super.dispose();
   }
 
-  String _extractKml(String responseText) {
-    // 1. Try finding XML block enclosed in ```xml ... ```
-    final xmlRegex = RegExp(r'```xml([\s\S]*?)```');
-    var match = xmlRegex.firstMatch(responseText);
+  String _extractJson(String responseText) {
+    // 1. Try finding JSON block enclosed in ```json ... ```
+    final jsonRegex = RegExp(r'```json([\s\S]*?)```');
+    var match = jsonRegex.firstMatch(responseText);
     if (match != null) {
       return match.group(1)!.trim();
     }
@@ -48,21 +77,15 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
     match = genericRegex.firstMatch(responseText);
     if (match != null) {
       final codeBlock = match.group(1)!.trim();
-      if (codeBlock.startsWith('<?xml') || codeBlock.contains('<kml')) {
+      if (codeBlock.startsWith('{') || codeBlock.contains('"target"')) {
         return codeBlock;
       }
     }
 
-    // 3. Fallback: search for direct XML content
-    if (responseText.contains('<?xml') && responseText.contains('</kml>')) {
-      final start = responseText.indexOf('<?xml');
-      final end = responseText.indexOf('</kml>') + 6;
-      return responseText.substring(start, end).trim();
-    }
-
-    if (responseText.contains('<kml') && responseText.contains('</kml>')) {
-      final start = responseText.indexOf('<kml');
-      final end = responseText.indexOf('</kml>') + 6;
+    // 3. Fallback: search for direct JSON structure
+    if (responseText.contains('{') && responseText.contains('}')) {
+      final start = responseText.indexOf('{');
+      final end = responseText.lastIndexOf('}') + 1;
       return responseText.substring(start, end).trim();
     }
 
@@ -86,12 +109,15 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
     final geminiService = context.read<GeminiService>();
     final lgService = context.read<LgService>();
 
+    _ttsService?.stop();
+
     setState(() {
       _isLoading = true;
       _statusMessage =
           'Prompting Gemini AI model to generate KML simulation...';
       _errorMessage = '';
       _generatedKml = '';
+      _simulationSummary = '';
     });
 
     try {
@@ -106,19 +132,25 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
       );
 
       setState(() {
-        _statusMessage = 'Extracting and parsing KML structure...';
+        _statusMessage = 'Extracting and parsing threat intelligence...';
       });
 
-      // 3. Extract KML
-      final kml = _extractKml(responseText);
-      if (!kml.contains('<kml') || !kml.contains('</kml>')) {
-        throw Exception(
-          'Gemini response did not contain a valid KML structure. Raw output preview: \n${responseText.length > 200 ? "${responseText.substring(0, 200)}..." : responseText}',
-        );
+      // 3. Extract JSON and generate KML
+      final jsonBlock = _extractJson(responseText);
+      final kml = SimulationKmlGenerator.generateKmlFromJson(jsonBlock);
+
+      // Extract summary
+      String summary = '';
+      try {
+        final decodedJson = json.decode(jsonBlock);
+        summary = decodedJson['summary'] ?? '';
+      } catch (e) {
+        debugPrint('Failed to extract summary from JSON: $e');
       }
 
       setState(() {
         _generatedKml = kml;
+        _simulationSummary = summary;
         _statusMessage = 'Uploading KML simulation file to Liquid Galaxy...';
       });
 
@@ -153,6 +185,13 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
         _statusMessage = 'Simulation projected successfully!';
       });
 
+      if (_simulationSummary.isNotEmpty) {
+        _ttsService?.speak(
+          _simulationSummary,
+          utteranceId: 'simulation_summary',
+        );
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -181,6 +220,7 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
 
   Future<void> _clearSimulation() async {
     final lgService = context.read<LgService>();
+    _ttsService?.stop();
     setState(() {
       _isLoading = true;
       _statusMessage = 'Clearing Liquid Galaxy visuals...';
@@ -191,6 +231,7 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
       setState(() {
         _isVisualized = false;
         _generatedKml = '';
+        _simulationSummary = '';
         _isLoading = false;
         _statusMessage = '';
       });
@@ -230,7 +271,7 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeaderBanner(isDark),
+            _buildHeaderBanner(context, isDark),
             _buildRigConnectionBar(lgService, isDark),
             Expanded(
               child: SingleChildScrollView(
@@ -258,55 +299,58 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
     );
   }
 
-  Widget _buildHeaderBanner(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F111A) : Colors.indigo.shade900,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? Colors.blue.shade900.withOpacity(0.5)
-                : Colors.indigo.shade800,
-            width: 1,
-          ),
-        ),
-      ),
+  Widget _buildHeaderBanner(BuildContext context, bool isDark) {
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subtitleColor = isDark ? Colors.grey.shade400 : Colors.black54;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Open navigation drawer',
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0D1124) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? const Color(0xFF00E5FF).withOpacity(0.05)
+                      : Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.psychology,
+              color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF3B82F6),
+              size: 28,
+            ),
           ),
-          const SizedBox(width: 12),
-          Icon(
-            Icons.psychology_outlined,
-            color: isDark ? Colors.cyanAccent : Colors.amberAccent,
-            size: 32,
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'ATTACK SIMULATOR',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: titleColor,
                     letterSpacing: 2.0,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  'Simulate future cyber threats on Liquid Galaxy using Gemini AI',
+                  'AI Threat Projection Console',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.grey.shade400 : Colors.white70,
-                    fontWeight: FontWeight.w400,
+                    color: subtitleColor,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -318,113 +362,188 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
   }
 
   Widget _buildRigConnectionBar(LgService lgService, bool isDark) {
-    final statusColor = lgService.isConnected ? Colors.green : Colors.red;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: isDark ? const Color(0xFF141622) : Colors.grey.shade200,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Rig Server: ${lgService.isConnected ? "CONNECTED" : "DISCONNECTED"} (${lgService.connectionModel.ip}:${lgService.connectionModel.port})',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+    final statusColor = lgService.isConnected
+        ? const Color(0xFF00FFC2)
+        : Colors.redAccent;
+    final statusText = lgService.isConnected ? "Rig Connected" : "Rig Offline";
+    final activeGlowColor = lgService.isConnected
+        ? const Color(0xFF00FFC2)
+        : Colors.redAccent;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
           ),
-          Text(
-            lgService.isConnected
-                ? 'Visualization Ready'
-                : 'Visualization Offline',
-            style: TextStyle(
-              fontSize: 11,
-              color: lgService.isConnected ? Colors.green : Colors.grey,
-              fontWeight: FontWeight.bold,
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: activeGlowColor.withOpacity(
+                              0.6 * _pulseController.value,
+                            ),
+                            blurRadius: 8 * _pulseController.value,
+                            spreadRadius: 2 * _pulseController.value,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '$statusText • ${lgService.connectionModel.ip}:${lgService.connectionModel.port}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              lgService.isConnected ? 'Ready' : 'Offline',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: lgService.isConnected
+                    ? const Color(0xFF00FFC2)
+                    : Colors.grey,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildIntroCard(bool isDark) {
-    final cardBgColor = isDark
-        ? const Color(0xFF1A1C29)
-        : Colors.blue.shade50.withOpacity(0.5);
-    final borderColor = isDark
-        ? Colors.blue.shade900.withOpacity(0.3)
-        : Colors.blue.shade100;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: isDark ? Colors.cyanAccent : Colors.indigo.shade800,
-            size: 24,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            width: 1.2,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'How it works',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.indigo.shade900,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Describe a cybersecurity attack scenario in natural language. Gemini AI will interpret the locations, attack type, and intensity, generate a corresponding KML file, project it on the screens, and fly your Liquid Galaxy viewport straight to the center of the action.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.grey.shade300 : Colors.black87,
-                    height: 1.4,
-                  ),
-                ),
-              ],
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF00E5FF).withOpacity(0.08)
+                    : const Color(0xFF3B82F6).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                Icons.info_outline_rounded,
+                color: isDark
+                    ? const Color(0xFF00E5FF)
+                    : const Color(0xFF3B82F6),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'How it works',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Describe a cybersecurity attack scenario in natural language. Gemini AI will interpret the locations, attack type, and intensity, generate a corresponding KML file, project it on the screens, and fly your Liquid Galaxy viewport straight to the center of the action.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey.shade400 : Colors.black87,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildFormCard(LgService lgService, bool isDark) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isDark
-              ? Colors.blueGrey.shade900.withOpacity(0.5)
-              : Colors.grey.shade300,
+    final activeColor = isDark
+        ? const Color(0xFF00E5FF)
+        : const Color(0xFF3B82F6);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.all(20.0),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.02),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -435,7 +554,9 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.blue.shade200 : Colors.indigo.shade800,
+                  color: isDark
+                      ? const Color(0xFF00E5FF)
+                      : const Color(0xFF3B82F6),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -455,16 +576,16 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                   hintText:
                       'e.g. show me a ddos attack from multiple locations to a server based in usa',
                   alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Quick Presets (Tap to populate):',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                  letterSpacing: 0.3,
                 ),
               ),
               const SizedBox(height: 8),
@@ -473,15 +594,28 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                 runSpacing: 8,
                 children: _presets.map((preset) {
                   return ActionChip(
+                    padding: EdgeInsets.zero,
+                    labelPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 0,
+                    ),
                     label: Text(
                       preset.length > 35
                           ? '${preset.substring(0, 35)}...'
                           : preset,
-                      style: const TextStyle(fontSize: 11),
+                      style: const TextStyle(fontSize: 10.5),
                     ),
                     backgroundColor: isDark
-                        ? const Color(0xFF1F2235)
+                        ? const Color(0xFF141A35)
                         : Colors.grey.shade100,
+                    side: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF1F294D)
+                          : Colors.grey.shade200,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     onPressed: _isLoading
                         ? null
                         : () {
@@ -499,12 +633,11 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: isDark
-                            ? Colors.cyan.shade900
-                            : Colors.indigo.shade700,
-                        foregroundColor: Colors.white,
+                        backgroundColor: activeColor,
+                        foregroundColor: isDark ? Colors.black : Colors.white,
+                        minimumSize: const Size(0, 48),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       onPressed: _isLoading ? null : _runSimulation,
@@ -517,7 +650,7 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Icon(Icons.play_arrow_rounded),
+                          : const Icon(Icons.play_arrow_rounded, size: 20),
                       label: const Text(
                         'Simulate Scenario',
                         style: TextStyle(
@@ -531,14 +664,18 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                     const SizedBox(width: 12),
                     IconButton.filled(
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.red.shade900.withOpacity(0.8),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        backgroundColor: Colors.redAccent.withOpacity(0.12),
+                        foregroundColor: Colors.redAccent,
+                        side: const BorderSide(
+                          color: Colors.redAccent,
+                          width: 1.2,
                         ),
-                        padding: const EdgeInsets.all(14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.all(12),
                       ),
-                      icon: const Icon(Icons.layers_clear),
+                      icon: const Icon(Icons.layers_clear, size: 20),
                       tooltip: 'Clear Simulation Visuals',
                       onPressed: _isLoading ? null : _clearSimulation,
                     ),
@@ -553,18 +690,27 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
   }
 
   Widget _buildStatusAndResultCard(bool isDark) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isDark
-              ? Colors.blueGrey.shade900.withOpacity(0.5)
-              : Colors.grey.shade300,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Container(
+        padding: const EdgeInsets.all(20.0),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.02),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -573,7 +719,9 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.blue.shade200 : Colors.indigo.shade800,
+                color: isDark
+                    ? const Color(0xFF00E5FF)
+                    : const Color(0xFF3B82F6),
                 letterSpacing: 0.5,
               ),
             ),
@@ -602,9 +750,9 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  color: Colors.red.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,7 +762,7 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                       color: Colors.redAccent,
                       size: 20,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         _errorMessage,
@@ -630,19 +778,112 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
             ] else if (_statusMessage.isNotEmpty) ...[
               Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF00FFC2),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       _statusMessage,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Colors.green,
+                        color: Color(0xFF00FFC2),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
+              ),
+            ],
+            if (_simulationSummary.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.insights_rounded,
+                        color: isDark
+                            ? const Color(0xFF00E5FF)
+                            : const Color(0xFF3B82F6),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'AI Simulation Summary',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? const Color(0xFF00E5FF)
+                              : const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Consumer<TextToSpeechService>(
+                    builder: (context, tts, _) {
+                      final isThisSpeaking =
+                          tts.isSpeaking &&
+                          tts.currentUtterance == 'simulation_summary';
+                      return IconButton(
+                        icon: Icon(
+                          isThisSpeaking
+                              ? Icons.volume_up_rounded
+                              : Icons.volume_mute_rounded,
+                          color: isDark
+                              ? const Color(0xFF00E5FF)
+                              : const Color(0xFF3B82F6),
+                          size: 20,
+                        ),
+                        tooltip: isThisSpeaking
+                            ? 'Stop Speaking'
+                            : 'Speak Summary',
+                        onPressed: () {
+                          if (isThisSpeaking) {
+                            tts.stop();
+                          } else {
+                            tts.speak(
+                              _simulationSummary,
+                              utteranceId: 'simulation_summary',
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF141A35)
+                      : Colors.blue.shade50.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF1F294D)
+                        : Colors.blue.shade100,
+                  ),
+                ),
+                child: MarkdownBody(
+                  data: _simulationSummary,
+                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                      .copyWith(
+                        p: TextStyle(
+                          fontSize: 13,
+                          height: 1.5,
+                          color: isDark ? Colors.grey.shade300 : Colors.black87,
+                        ),
+                      ),
+                ),
               ),
             ],
             if (_generatedKml.isNotEmpty) ...[
@@ -657,7 +898,7 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.copy, size: 18),
+                    icon: const Icon(Icons.copy_rounded, size: 18),
                     tooltip: 'Copy KML code',
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: _generatedKml));
@@ -677,12 +918,12 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF0F111A)
+                      ? const Color(0xFF070B19)
                       : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isDark
-                        ? Colors.blueGrey.shade900
+                        ? const Color(0xFF1F294D)
                         : Colors.grey.shade300,
                   ),
                 ),
@@ -693,8 +934,8 @@ class _SimulateAttackPageState extends State<SimulateAttackPage> {
                       fontFamily: 'monospace',
                       fontSize: 11,
                       color: isDark
-                          ? Colors.cyan.shade200
-                          : Colors.indigo.shade900,
+                          ? const Color(0xFF00FFC2)
+                          : const Color(0xFF0F172A),
                     ),
                   ),
                 ),

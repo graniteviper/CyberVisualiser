@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cyber_visualiser/main.dart';
+import 'package:cyber_visualiser/screens/onboarding_screen.dart';
 import 'package:cyber_visualiser/services/lg_service.dart';
 import 'package:cyber_visualiser/services/lg_adapter.dart';
 import 'package:cyber_visualiser/services/track_ip_lg_service.dart';
@@ -19,17 +19,18 @@ import 'package:cyber_visualiser/features/historical/repository/historical_repos
 import 'package:cyber_visualiser/features/historical/providers/historical_provider.dart';
 import 'package:cyber_visualiser/features/historical/models/historical_attack.dart';
 
+import 'package:cyber_visualiser/theme/app_theme.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('App renders home and settings navigation', (
+  testWidgets('Onboarding Screen slider flow validation', (
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
 
     final apiService = HoneyLabsService();
     final repository = AttackRepository(apiService);
-
     final abuseDbService = AbuseIpDbService();
     final trackRepository = TrackIpRepository(abuseDbService);
     final historicalRepository = MockHistoricalRepository();
@@ -61,33 +62,51 @@ void main() {
             create: (_) => HistoricalProvider(historicalRepository),
           ),
         ],
-        child: const MaterialApp(
-          home: AppShell(autoInitializeConnection: false),
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: const OnboardingScreen(autoInitializeConnectionOnFinish: false),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    // Verify Dashboard signature
-    expect(find.text('Liquid Galaxy Dashboard'), findsOneWidget);
+    // Slide 1: Welcome page verification
+    expect(find.text('Immersive Threat Intel'), findsOneWidget);
+    expect(find.text('Next'), findsOneWidget);
 
-    // Verify Settings tab is accessible in the bottom navigation bar
-    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
-
-    // Tap on the Settings icon/text in the bottom navigation bar
-    await tester.tap(find.byIcon(Icons.settings_rounded));
+    // Tap Next to navigate to Slide 2
+    await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
 
-    // Verify it navigates to settings screen
-    expect(find.text('SETTINGS'), findsOneWidget);
+    // Slide 2: Liquid Galaxy setup verification
+    expect(find.text('Liquid Galaxy Rig Connection'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'IP Address'), findsOneWidget);
 
-    // Tap on the Track IP icon/text in the bottom navigation bar
-    await tester.tap(find.byIcon(Icons.location_on_rounded));
+    // Tap Next to navigate to Slide 3
+    await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
 
-    // Verify it navigates to the Track IP screen
-    expect(find.text('IP TRACKER'), findsOneWidget);
+    // Slide 3: API keys page verification
+    expect(find.text('API Integrations (Optional)'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'HoneyLabs API Key'), findsOneWidget);
+
+    // Tap Next to navigate to Slide 4
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    // Slide 4: Features overview verification
+    expect(find.text('Explore Cyber Visualiser Features'), findsOneWidget);
+    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Threat Intel Dashboard'), findsOneWidget);
+
+    // Tap Get Started to finish onboarding
+    await tester.tap(find.text('Get Started'));
+    await tester.pumpAndSettle();
+
+    // Verify SharedPreferences is updated
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('completed_onboarding'), true);
   });
 }
 
