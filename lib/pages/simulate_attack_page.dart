@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -9,6 +10,7 @@ import '../services/gemini_service.dart';
 import '../services/text_to_speech_service.dart';
 import '../templates/simulation_prompt_template.dart';
 import '../templates/simulation_kml_generator.dart';
+import '../templates/gemini_prompt_template.dart';
 
 class SimulateAttackPage extends StatefulWidget {
   const SimulateAttackPage({super.key});
@@ -30,6 +32,18 @@ class _SimulateAttackPageState extends State<SimulateAttackPage>
   String _simulationSummary = '';
   TextToSpeechService? _ttsService;
   late final AnimationController _pulseController;
+
+  // Tour state variables
+  Map<String, dynamic>? _simulationData;
+  bool _isTourScriptLoading = false;
+  bool _isTourPlaying = false;
+  bool _isTourPaused = false;
+  int _currentTourStepIndex = 0;
+  List<Map<String, dynamic>> _tourSteps = [];
+  Timer? _tourOrbitTimer;
+  double _currentHeading = 0.0;
+  String? _tourError;
+  bool _isDisposed = false;
 
   final List<String> _presets = [
     'show me a ddos attack from multiple locations to a server based in usa',
@@ -58,8 +72,9 @@ class _SimulateAttackPageState extends State<SimulateAttackPage>
 
   @override
   void dispose() {
+    _isDisposed = true;
     _promptController.dispose();
-    _ttsService?.stop();
+    _stopTour();
     _pulseController.dispose();
     super.dispose();
   }
@@ -141,14 +156,16 @@ class _SimulateAttackPageState extends State<SimulateAttackPage>
 
       // Extract summary
       String summary = '';
+      Map<String, dynamic>? decodedJson;
       try {
-        final decodedJson = json.decode(jsonBlock);
-        summary = decodedJson['summary'] ?? '';
+        decodedJson = json.decode(jsonBlock);
+        summary = decodedJson?['summary'] ?? '';
       } catch (e) {
         debugPrint('Failed to extract summary from JSON: $e');
       }
 
       setState(() {
+        _simulationData = decodedJson;
         _generatedKml = kml;
         _simulationSummary = summary;
         _statusMessage = 'Uploading KML simulation file to Liquid Galaxy...';
@@ -218,9 +235,397 @@ class _SimulateAttackPageState extends State<SimulateAttackPage>
     }
   }
 
+  double _toDouble(dynamic val) {
+    if (val is double) return val;
+    if (val is int) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0.0;
+    return 0.0;
+  }
+
+  Future<void> _flyToCoordinate({
+    required double latitude,
+    required double longitude,
+    required double range,
+    required double tilt,
+    required double heading,
+  }) async {
+    final lgService = context.read<LgService>();
+    final lookAt =
+        '''<LookAt>
+        <longitude>$longitude</longitude>
+        <latitude>$latitude</latitude>
+        <altitude>0</altitude>
+        <heading>$heading</heading>
+        <tilt>$tilt</tilt>
+        <range>$range</range>
+        <gx:altitudeMode>relativeToGround</gx:altitudeMode>
+      </LookAt>''';
+    await lgService.flyTo(lookAt);
+  }
+
+  void _startOrbitTimer(double lat, double lon, double range, double tilt) {
+    _stopOrbitTimer();
+    _tourOrbitTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (_isTourPaused || !_isTourPlaying) {
+        timer.cancel();
+        return;
+      }
+      _currentHeading = (_currentHeading + 15) % 360;
+      await _flyToCoordinate(
+        latitude: lat,
+        longitude: lon,
+        range: range,
+        tilt: tilt,
+        heading: _currentHeading,
+      );
+    });
+  }
+
+  void _stopOrbitTimer() {
+    _tourOrbitTimer?.cancel();
+    _tourOrbitTimer = null;
+  }
+
+  void _playCurrentStep() async {
+    if (_currentTourStepIndex < 0 ||
+        _currentTourStepIndex >= _tourSteps.length) {
+      return;
+    }
+
+    final step = _tourSteps[_currentTourStepIndex];
+    final double lat = step['latitude'];
+    final double lon = step['longitude'];
+    final double range = step['range'];
+    final double tilt = step['tilt'];
+    final String narration = step['narration'];
+
+    _currentHeading = 0.0;
+
+    await _flyToCoordinate(
+      latitude: lat,
+      longitude: lon,
+      range: range,
+      tilt: tilt,
+      heading: _currentHeading,
+    );
+
+    _startOrbitTimer(lat, lon, range, tilt);
+
+    if (_ttsService != null) {
+      await _ttsService!.speak(
+        narration,
+        utteranceId: 'sim_step_$_currentTourStepIndex',
+      );
+    }
+  }
+
+  void _startTourPlayback() {
+    if (_tourSteps.isEmpty) return;
+    setState(() {
+      _isTourPlaying = true;
+      _isTourPaused = false;
+      _currentTourStepIndex = 0;
+    });
+
+    if (_ttsService != null) {
+      _ttsService!.onCompletion = () {
+        if (_isTourPlaying && !_isTourPaused) {
+          Timer(const Duration(seconds: 2), () {
+            if (_isTourPlaying && !_isTourPaused) {
+              _nextTourStep();
+            }
+          });
+        }
+      };
+    }
+
+    _playCurrentStep();
+  }
+
+  void _pauseTour() {
+    if (!_isTourPlaying || _isTourPaused) return;
+    setState(() {
+      _isTourPaused = true;
+    });
+    _stopOrbitTimer();
+    if (_ttsService != null) {
+      _ttsService!.onCompletion = null;
+      _ttsService!.stop();
+    }
+  }
+
+  void _resumeTour() {
+    if (!_isTourPlaying || !_isTourPaused) return;
+    setState(() {
+      _isTourPaused = false;
+    });
+    if (_ttsService != null) {
+      _ttsService!.onCompletion = () {
+        if (_isTourPlaying && !_isTourPaused) {
+          Timer(const Duration(seconds: 2), () {
+            if (_isTourPlaying && !_isTourPaused) {
+              _nextTourStep();
+            }
+          });
+        }
+      };
+    }
+    _playCurrentStep();
+  }
+
+  void _stopTour() {
+    _stopOrbitTimer();
+    if (_ttsService != null) {
+      _ttsService!.onCompletion = null;
+      _ttsService!.stop();
+    }
+    if (mounted && !_isDisposed) {
+      setState(() {
+        _isTourPlaying = false;
+        _isTourPaused = false;
+      });
+    } else {
+      _isTourPlaying = false;
+      _isTourPaused = false;
+    }
+  }
+
+  void _nextTourStep() {
+    if (!_isTourPlaying) return;
+    _stopOrbitTimer();
+    if (_ttsService != null) {
+      _ttsService!.onCompletion = null;
+      _ttsService!.stop();
+    }
+
+    if (_ttsService != null) {
+      _ttsService!.onCompletion = () {
+        if (_isTourPlaying && !_isTourPaused) {
+          Timer(const Duration(seconds: 2), () {
+            if (_isTourPlaying && !_isTourPaused) {
+              _nextTourStep();
+            }
+          });
+        }
+      };
+    }
+
+    if (_currentTourStepIndex < _tourSteps.length - 1) {
+      setState(() {
+        _currentTourStepIndex++;
+        _isTourPaused = false;
+      });
+      _playCurrentStep();
+    } else {
+      _stopTour();
+    }
+  }
+
+  void _previousTourStep() {
+    if (!_isTourPlaying) return;
+    _stopOrbitTimer();
+    if (_ttsService != null) {
+      _ttsService!.onCompletion = null;
+      _ttsService!.stop();
+    }
+
+    if (_ttsService != null) {
+      _ttsService!.onCompletion = () {
+        if (_isTourPlaying && !_isTourPaused) {
+          Timer(const Duration(seconds: 2), () {
+            if (_isTourPlaying && !_isTourPaused) {
+              _nextTourStep();
+            }
+          });
+        }
+      };
+    }
+
+    if (_currentTourStepIndex > 0) {
+      setState(() {
+        _currentTourStepIndex--;
+        _isTourPaused = false;
+      });
+      _playCurrentStep();
+    }
+  }
+
+  Map<String, dynamic> _generateFallbackTourScript(
+    Map<String, dynamic> simData,
+  ) {
+    final String scenarioName = simData['scenarioName'] ?? 'Attack Simulation';
+    final Map<String, dynamic> target = simData['target'] ?? {};
+    final String summary = simData['summary'] ?? '';
+    final List<dynamic> attackers = simData['attackers'] ?? [];
+
+    final String overview =
+        'Starting 3D tour for scenario: $scenarioName. We are viewing the target server, '
+        '${target['name']}, located in ${target['locationName']}. $summary';
+
+    final List<Map<String, dynamic>> attackersList = [];
+    for (var a in attackers) {
+      if (a is Map<String, dynamic>) {
+        attackersList.add({
+          'nodeName': a['name'] ?? 'Attacker',
+          'narration':
+              'Analyzing threat vector from ${a['name']} located in ${a['locationName']}. '
+              'It is launching a ${a['threatType']} with ${a['severity']} severity. '
+              'Details: ${a['description']}.',
+        });
+      }
+    }
+
+    final String conclusion =
+        'This concludes the attack simulation. The security team recommends monitoring firewall logs '
+        'and implementing defensive measures against these simulated attack paths.';
+
+    return {
+      'overview': overview,
+      'attackers': attackersList,
+      'conclusion': conclusion,
+    };
+  }
+
+  List<Map<String, dynamic>> _buildTourSteps(
+    Map<String, dynamic> script,
+    Map<String, dynamic> simData,
+  ) {
+    final List<Map<String, dynamic>> steps = [];
+    final Map<String, dynamic> target = simData['target'] ?? {};
+    final List<dynamic> attackers = simData['attackers'] ?? [];
+
+    steps.add({
+      'title': 'Target: ${target['name']}',
+      'latitude': _toDouble(target['latitude']),
+      'longitude': _toDouble(target['longitude']),
+      'range': 4000000.0,
+      'tilt': 30.0,
+      'narration': script['overview'] ?? '',
+    });
+
+    final regionsScriptList = script['attackers'] as List? ?? [];
+    final Map<String, String> attackerNarrations = {};
+    for (var reg in regionsScriptList) {
+      if (reg is Map && reg['nodeName'] != null) {
+        attackerNarrations[reg['nodeName'].toString().toUpperCase()] =
+            reg['narration']?.toString() ?? '';
+      }
+    }
+
+    for (var a in attackers) {
+      if (a is! Map<String, dynamic>) continue;
+      final String nodeName = a['name'] ?? 'Attacker';
+      final String location = a['locationName'] ?? 'Unknown';
+      final double lat = _toDouble(a['latitude']);
+      final double lon = _toDouble(a['longitude']);
+      final String narration =
+          attackerNarrations[nodeName.toUpperCase()] ??
+          'Focusing on threat node $nodeName located in $location, launching a ${a['threatType']} against the target.';
+
+      steps.add({
+        'title': 'Attacker: $nodeName ($location)',
+        'latitude': lat,
+        'longitude': lon,
+        'range': 2000000.0,
+        'tilt': 45.0,
+        'narration': narration,
+      });
+    }
+
+    steps.add({
+      'title': 'Simulation Conclusion',
+      'latitude': _toDouble(target['latitude']),
+      'longitude': _toDouble(target['longitude']),
+      'range': 4500000.0,
+      'tilt': 35.0,
+      'narration': script['conclusion'] ?? '',
+    });
+
+    return steps;
+  }
+
+  Future<void> _generateTourScript() async {
+    if (_simulationData == null) return;
+
+    setState(() {
+      _isTourScriptLoading = true;
+      _tourError = null;
+      _tourSteps = [];
+      _currentTourStepIndex = 0;
+    });
+
+    try {
+      final prompt = GeminiPromptTemplate.fillSimulationTourScriptPrompt(
+        _simulationData!,
+      );
+      final geminiService = context.read<GeminiService>();
+      final responseText = await geminiService.generateThreatSummary(prompt);
+
+      String cleanJson = responseText.trim();
+      if (cleanJson.startsWith('```')) {
+        final lines = cleanJson.split('\n');
+        if (lines.first.startsWith('```')) {
+          lines.removeAt(0);
+        }
+        if (lines.isNotEmpty && lines.last.startsWith('```')) {
+          lines.removeLast();
+        }
+        cleanJson = lines.join('\n').trim();
+      }
+
+      Map<String, dynamic> scriptData;
+      try {
+        scriptData = json.decode(cleanJson) as Map<String, dynamic>;
+      } catch (e) {
+        debugPrint(
+          'cyber visualiser Simulation Tour JSON Parse Error: $e. Falling back to template.',
+        );
+        scriptData = _generateFallbackTourScript(_simulationData!);
+      }
+
+      final steps = _buildTourSteps(scriptData, _simulationData!);
+      setState(() {
+        _tourSteps = steps;
+        _tourError = null;
+      });
+    } catch (e) {
+      debugPrint(
+        'cyber visualiser Simulation Tour Script Generation Error: $e',
+      );
+      final fallbackScript = _generateFallbackTourScript(_simulationData!);
+      setState(() {
+        _tourSteps = _buildTourSteps(fallbackScript, _simulationData!);
+        _tourError = null;
+      });
+    } finally {
+      setState(() {
+        _isTourScriptLoading = false;
+      });
+    }
+  }
+
+  Future<void> _startTourFlow() async {
+    if (_generatedKml.isEmpty) {
+      if (_promptController.text.trim().isEmpty) {
+        _promptController.text = _presets.first;
+      }
+      await _runSimulation();
+    }
+
+    if (_generatedKml.isEmpty) {
+      return;
+    }
+
+    await _generateTourScript();
+
+    if (_tourSteps.isNotEmpty) {
+      _startTourPlayback();
+    }
+  }
+
   Future<void> _clearSimulation() async {
     final lgService = context.read<LgService>();
-    _ttsService?.stop();
+    _stopTour();
     setState(() {
       _isLoading = true;
       _statusMessage = 'Clearing Liquid Galaxy visuals...';
@@ -229,6 +634,11 @@ class _SimulateAttackPageState extends State<SimulateAttackPage>
     try {
       await lgService.cleanKML();
       setState(() {
+        _simulationData = null;
+        _tourSteps = [];
+        _currentTourStepIndex = 0;
+        _isTourPlaying = false;
+        _isTourPaused = false;
         _isVisualized = false;
         _generatedKml = '';
         _simulationSummary = '';
@@ -282,6 +692,8 @@ class _SimulateAttackPageState extends State<SimulateAttackPage>
                     _buildIntroCard(isDark),
                     const SizedBox(height: 16),
                     _buildFormCard(lgService, isDark),
+                    const SizedBox(height: 16),
+                    _buildTourPlayerCard(isDark),
                     if (_isLoading ||
                         _statusMessage.isNotEmpty ||
                         _errorMessage.isNotEmpty ||
@@ -295,6 +707,312 @@ class _SimulateAttackPageState extends State<SimulateAttackPage>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTourPlayerCard(bool isDark) {
+    final bool hasSimulation =
+        _generatedKml.isNotEmpty && _simulationData != null;
+    final activeColor = isDark
+        ? const Color(0xFF00E5FF)
+        : const Color(0xFF3B82F6);
+
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0D1124) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.12)
+                : Colors.black.withOpacity(0.02),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: activeColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.map_rounded, color: activeColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '3D GEOGRAPHIC TOUR',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Text(
+                      _isTourPlaying
+                          ? 'Step ${_currentTourStepIndex + 1} of ${_tourSteps.length}: ${_tourSteps[_currentTourStepIndex]['title']}'
+                          : (hasSimulation
+                                ? 'Simulation ready. Start tour narration.'
+                                : 'No scenario generated yet.'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          if (_isTourScriptLoading) ...[
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Generating 3D Tour script with Gemini AI...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else if (!_isTourPlaying) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: activeColor,
+                      foregroundColor: isDark ? Colors.black : Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: _isLoading ? null : _startTourFlow,
+                    icon: Icon(
+                      hasSimulation
+                          ? Icons.play_arrow_rounded
+                          : Icons.auto_mode_rounded,
+                      size: 22,
+                    ),
+                    label: Text(
+                      hasSimulation ? 'Start 3D Tour' : 'Generate & Start Tour',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                if (hasSimulation) ...[
+                  const SizedBox(width: 12),
+                  IconButton.filled(
+                    style: IconButton.styleFrom(
+                      backgroundColor: activeColor.withOpacity(0.12),
+                      foregroundColor: activeColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.all(14),
+                    ),
+                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    tooltip: 'Pre-generate Tour Script',
+                    onPressed: _isLoading ? null : _generateTourScript,
+                  ),
+                ],
+              ],
+            ),
+          ] else ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: _tourSteps.isEmpty
+                    ? 0
+                    : (_currentTourStepIndex + 1) / _tourSteps.length,
+                backgroundColor: isDark
+                    ? Colors.blueGrey.shade900
+                    : Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                minHeight: 5,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              constraints: const BoxConstraints(minHeight: 80),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF141A35) : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF1F294D)
+                      : Colors.grey.shade200,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'NARRATION SUBTITLES',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      if (_ttsService != null &&
+                          _ttsService!.isSpeaking &&
+                          !_isTourPaused)
+                        Row(
+                          children: List.generate(
+                            4,
+                            (index) => Container(
+                              margin: const EdgeInsets.only(left: 2),
+                              width: 3,
+                              height: 10 + (index % 2 == 0 ? 4 : 0),
+                              decoration: BoxDecoration(
+                                color: activeColor,
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _tourSteps[_currentTourStepIndex]['narration'] ?? '',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: isDark ? Colors.grey.shade200 : Colors.black87,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: isDark
+                        ? Colors.blueGrey.shade900
+                        : Colors.grey.shade100,
+                    foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: const Icon(Icons.skip_previous_rounded, size: 20),
+                  onPressed: _currentTourStepIndex == 0
+                      ? null
+                      : _previousTourStep,
+                ),
+                const SizedBox(width: 14),
+
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: activeColor,
+                    foregroundColor: isDark ? Colors.black : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  icon: Icon(
+                    _isTourPaused
+                        ? Icons.play_arrow_rounded
+                        : Icons.pause_rounded,
+                    size: 30,
+                  ),
+                  onPressed: _isTourPaused ? _resumeTour : _pauseTour,
+                ),
+                const SizedBox(width: 14),
+
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: isDark
+                        ? Colors.blueGrey.shade900
+                        : Colors.grey.shade100,
+                    foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: Icon(
+                    _currentTourStepIndex == _tourSteps.length - 1
+                        ? Icons.check_rounded
+                        : Icons.skip_next_rounded,
+                    size: 20,
+                  ),
+                  onPressed: _nextTourStep,
+                ),
+                const SizedBox(width: 24),
+
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(0.12),
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent, width: 1.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  icon: const Icon(Icons.stop_rounded, size: 20),
+                  onPressed: _stopTour,
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

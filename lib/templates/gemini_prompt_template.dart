@@ -70,7 +70,9 @@ Keep it professional, structured with Markdown headers and bullet points, and co
       final countryName = list.first.reporterCountryName.isNotEmpty
           ? list.first.reporterCountryName
           : countryCode;
-      logBuffer.writeln('- Region: $countryName ($countryCode) - ${list.length} report(s). Details:');
+      logBuffer.writeln(
+        '- Region: $countryName ($countryCode) - ${list.length} report(s). Details:',
+      );
       for (var item in list.take(2)) {
         logBuffer.writeln('  * Categories: ${item.categoryNames.join(", ")}');
         if (item.comment.trim().isNotEmpty) {
@@ -110,6 +112,61 @@ Ensure all quotes are escaped properly. The JSON must strictly match this schema
     }
   ],
   "conclusion": "Narration script summarizing the threat level and giving recommendations."
+}
+''';
+  }
+
+  /// Generates a prompt to instruct Gemini to write a step-by-step narrative script for a simulation 3D tour.
+  static String fillSimulationTourScriptPrompt(Map<String, dynamic> simData) {
+    final String scenarioName = simData['scenarioName'] ?? 'Attack Simulation';
+    final String summary = simData['summary'] ?? '';
+    final Map<String, dynamic> target = simData['target'] ?? {};
+    final List<dynamic> attackers = simData['attackers'] ?? [];
+
+    final StringBuffer attackersBuffer = StringBuffer();
+    for (var attacker in attackers) {
+      if (attacker is Map<String, dynamic>) {
+        attackersBuffer.writeln(
+          '- Attacker: ${attacker['name']} (${attacker['locationName']})',
+        );
+        attackersBuffer.writeln('  * IP: ${attacker['ip']}');
+        attackersBuffer.writeln(
+          '  * Threat: ${attacker['threatType']} (${attacker['severity']})',
+        );
+        attackersBuffer.writeln('  * Details: ${attacker['description']}');
+      }
+    }
+
+    return '''
+You are an expert cyber threat intelligence narrator. You are generating a script for a 3D audio-visual camera tour of a simulated cyber attack scenario.
+The tour stages:
+1. Target Infrastructure: Introduction to the victim server/infrastructure.
+2. Attacker Nodes: Visiting each individual attacker node on the globe, describing their threat details.
+3. Summary & Mitigation: A conclusion explaining the final outcome and recommendations.
+
+Here is the simulation data:
+- Scenario: $scenarioName
+- Scenario Summary: $summary
+- Target Server: ${target['name']} (${target['locationName']})
+  * IP: ${target['ip']}
+  * Description: ${target['description']}
+
+Attacker Nodes:
+${attackersBuffer.toString()}
+
+INSTRUCTIONS:
+Generate a clean JSON object containing the narration script for each tour step.
+The output MUST be a valid JSON object only. Do NOT enclose it in markdown blocks like ```json ... ```. Just return the raw JSON text.
+Ensure all quotes are escaped properly. The JSON must strictly match this schema:
+{
+  "overview": "Narration script for the target server and scenario overview. Introduce the target server, its location, and the general attack threat.",
+  "attackers": [
+    {
+      "nodeName": "Attacker Node 1", // Match from attackers name in simulation data
+      "narration": "Narration script discussing the attack vector from this specific node, using details from the simulation data."
+    }
+  ],
+  "conclusion": "Narration script summarizing the overall scenario and security recommendation."
 }
 ''';
   }

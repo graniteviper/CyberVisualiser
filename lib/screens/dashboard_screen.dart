@@ -6,7 +6,7 @@ import '../services/lg_service.dart';
 import '../services/lg_adapter.dart';
 import '../widgets/event_details_panel.dart';
 import '../widgets/gemini_summary_dialog.dart';
-import '../widgets/google_maps.dart';
+import '../widgets/custom_map.dart';
 import '../services/gemini_service.dart';
 import '../services/text_to_speech_service.dart';
 
