@@ -49,14 +49,14 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     mapController = MapController();
-    zoomvalue = 591657550.500000 / pow(2, 12.0);
+    zoomvalue = 591657550.500000 / pow(2, 12.0 + 3);
   }
 
   void _onCameraMove(MapCamera camera) {
     longvalue = camera.center.longitude;
     latvalue = camera.center.latitude;
     bearingvalue = camera.rotation;
-    zoomvalue = 591657550.500000 / pow(2, camera.zoom);
+    zoomvalue = 591657550.500000 / pow(2, camera.zoom + 3);
   }
 
   void _onCameraIdle() async {
