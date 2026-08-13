@@ -51,4 +51,5 @@ flutter:
   assets:
     - .env
     - assets/data/historical_attacks.json
+    - assets/images/
 

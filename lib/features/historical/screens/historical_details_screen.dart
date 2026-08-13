@@ -1,12 +1,43 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cyber_visualiser/services/gemini_service.dart';
+import 'package:cyber_visualiser/services/lg_service.dart';
+import 'package:cyber_visualiser/services/text_to_speech_service.dart';
 import '../models/historical_attack.dart';
+import '../providers/historical_provider.dart';
 import '../widgets/historical_gemini_dialog.dart';
 
 /// Screen displaying the full details of a specific historical cyber incident.
-class HistoricalDetailsScreen extends StatelessWidget {
+class HistoricalDetailsScreen extends StatefulWidget {
   final HistoricalAttack attack;
 
   const HistoricalDetailsScreen({super.key, required this.attack});
+
+  @override
+  State<HistoricalDetailsScreen> createState() =>
+      _HistoricalDetailsScreenState();
+}
+
+class _HistoricalDetailsScreenState extends State<HistoricalDetailsScreen> {
+  late final TextToSpeechService _ttsService;
+  late final LgService _lgService;
+  late final HistoricalProvider _provider;
+
+  @override
+  void initState() {
+    super.initState();
+    _ttsService = Provider.of<TextToSpeechService>(context, listen: false);
+    _lgService = Provider.of<LgService>(context, listen: false);
+    _provider = Provider.of<HistoricalProvider>(context, listen: false);
+  }
+
+  @override
+  void dispose() {
+    // Stop tour playback on exit
+    _provider.stopTour(_ttsService, _lgService);
+    super.dispose();
+  }
 
   /// Helper to return a semantic color corresponding to severity.
   Color _getSeverityColor(int severity) {
@@ -19,15 +50,22 @@ class HistoricalDetailsScreen extends StatelessWidget {
   void _openGeminiAssistant(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) =>
-          HistoricalGeminiDialog(attack: attack, contextAttacks: [attack]),
+      builder: (context) => HistoricalGeminiDialog(
+        attack: widget.attack,
+        contextAttacks: [widget.attack],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final severityColor = _getSeverityColor(attack.attack.severity);
+    final severityColor = _getSeverityColor(widget.attack.attack.severity);
+    final geminiService = Provider.of<GeminiService>(context, listen: false);
+
+    final activeColor = isDark
+        ? const Color(0xFF00E5FF)
+        : Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       appBar: AppBar(
@@ -48,7 +86,7 @@ class HistoricalDetailsScreen extends StatelessWidget {
           children: [
             // Title Header
             Text(
-              attack.title,
+              widget.attack.title,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 letterSpacing: -0.5,
@@ -65,14 +103,14 @@ class HistoricalDetailsScreen extends StatelessWidget {
                 _buildInfoBadge(
                   context,
                   icon: Icons.calendar_today_outlined,
-                  label: '${attack.month} ${attack.year}',
+                  label: '${widget.attack.month} ${widget.attack.year}',
                   color: isDark ? Colors.cyanAccent : Colors.indigo,
                 ),
                 // Category Chip
                 _buildInfoBadge(
                   context,
                   icon: Icons.category_outlined,
-                  label: attack.attack.category,
+                  label: widget.attack.attack.category,
                   color: Colors.orange,
                 ),
                 // Severity Chip
@@ -99,7 +137,7 @@ class HistoricalDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Severity ${attack.attack.severity}/10',
+                        'Severity ${widget.attack.attack.severity}/10',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -120,12 +158,15 @@ class HistoricalDetailsScreen extends StatelessWidget {
               context,
               isDark: isDark,
               children: [
-                _buildDetailsRow('Organization', attack.victim.name),
-                _buildDetailsRow('Country', attack.victim.country),
-                _buildDetailsRow('Country Code', attack.victim.countryCode),
+                _buildDetailsRow('Organization', widget.attack.victim.name),
+                _buildDetailsRow('Country', widget.attack.victim.country),
+                _buildDetailsRow(
+                  'Country Code',
+                  widget.attack.victim.countryCode,
+                ),
                 _buildDetailsRow(
                   'Location',
-                  'Lat: ${attack.victim.latitude.toStringAsFixed(4)}, Lon: ${attack.victim.longitude.toStringAsFixed(4)}',
+                  'Lat: ${widget.attack.victim.latitude.toStringAsFixed(4)}, Lon: ${widget.attack.victim.longitude.toStringAsFixed(4)}',
                 ),
               ],
             ),
@@ -142,8 +183,8 @@ class HistoricalDetailsScreen extends StatelessWidget {
               context,
               isDark: isDark,
               children: [
-                _buildDetailsRow('Attacker Name', attack.attacker.name),
-                _buildDetailsRow('Attacker Type', attack.attacker.type),
+                _buildDetailsRow('Attacker Name', widget.attack.attacker.name),
+                _buildDetailsRow('Attacker Type', widget.attack.attacker.type),
               ],
             ),
             const SizedBox(height: 24),
@@ -159,12 +200,18 @@ class HistoricalDetailsScreen extends StatelessWidget {
               context,
               isDark: isDark,
               children: [
-                _buildDetailsRow('Target Sector', attack.attack.targetSector),
+                _buildDetailsRow(
+                  'Target Sector',
+                  widget.attack.attack.targetSector,
+                ),
                 _buildDetailsRow(
                   'Impact Severity',
-                  '${attack.attack.severity} / 10',
+                  '${widget.attack.attack.severity} / 10',
                 ),
-                _buildDetailsRow('Categorization', attack.attack.category),
+                _buildDetailsRow(
+                  'Categorization',
+                  widget.attack.attack.category,
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -188,7 +235,7 @@ class HistoricalDetailsScreen extends StatelessWidget {
                 ),
               ),
               child: Text(
-                attack.summary,
+                widget.attack.summary,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.5,
                   color: isDark ? Colors.grey.shade300 : Colors.black87,
@@ -262,7 +309,7 @@ class HistoricalDetailsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Tags Section
-            if (attack.tags.isNotEmpty) ...[
+            if (widget.attack.tags.isNotEmpty) ...[
               _buildSectionHeader(
                 context,
                 'Identified Tags',
@@ -272,7 +319,7 @@ class HistoricalDetailsScreen extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: attack.tags.map((tag) {
+                children: widget.attack.tags.map((tag) {
                   return Chip(
                     label: Text(tag),
                     labelStyle: const TextStyle(fontSize: 12),
@@ -303,10 +350,13 @@ class HistoricalDetailsScreen extends StatelessWidget {
               context,
               isDark: isDark,
               children: [
-                _buildDetailsRow('Provider / Source', attack.source.name),
+                _buildDetailsRow(
+                  'Provider / Source',
+                  widget.attack.source.name,
+                ),
                 _buildDetailsRow(
                   'Year Reported',
-                  attack.source.year.toString(),
+                  widget.attack.source.year.toString(),
                 ),
               ],
             ),
@@ -315,31 +365,319 @@ class HistoricalDetailsScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              elevation: 4,
-              shadowColor: Theme.of(
-                context,
-              ).colorScheme.primary.withOpacity(0.4),
-              minimumSize: const Size.fromHeight(50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        child: Consumer<HistoricalProvider>(
+          builder: (context, provider, _) {
+            return _buildTourControlPanel(
+              context,
+              provider,
+              _ttsService,
+              _lgService,
+              isDark,
+              activeColor,
+              geminiService,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTourControlPanel(
+    BuildContext context,
+    HistoricalProvider provider,
+    TextToSpeechService ttsService,
+    LgService lgService,
+    bool isDark,
+    Color activeColor,
+    GeminiService geminiService,
+  ) {
+    if (provider.isTourScriptLoading) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(activeColor),
               ),
             ),
-            icon: const Icon(Icons.language_rounded),
-            label: const Text(
-              'VISUALIZE ON GLOBE',
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                provider.statusMessage,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
             ),
-            onPressed: () {
-              // Empty callback per requirements
-            },
+          ],
+        ),
+      );
+    }
+
+    if (provider.isTourPlaying) {
+      final currentStep = provider.tourSteps[provider.currentTourStepIndex];
+      final totalSteps = provider.tourSteps.length;
+      final narration = currentStep['narration'] ?? '';
+      final title = currentStep['title'] ?? 'Tour Step';
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 15,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Progress Bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: totalSteps == 0
+                    ? 0.0
+                    : (provider.currentTourStepIndex + 1) / totalSteps,
+                backgroundColor: isDark
+                    ? Colors.blueGrey.shade900
+                    : Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                minHeight: 4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '3D GEOGRAPHIC TOUR',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: activeColor,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  'Step ${provider.currentTourStepIndex + 1} of $totalSteps',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Narration Subtitle
+            Container(
+              padding: const EdgeInsets.all(12),
+              constraints: const BoxConstraints(maxHeight: 70),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF141A35) : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF1F294D)
+                      : Colors.grey.shade100,
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  narration,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.4,
+                    color: isDark ? Colors.grey.shade300 : Colors.black87,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Playback buttons row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.skip_previous_rounded, size: 24),
+                  color: isDark ? Colors.white70 : Colors.black87,
+                  onPressed: provider.currentTourStepIndex == 0
+                      ? null
+                      : () => provider.previousStep(ttsService, lgService),
+                ),
+                const SizedBox(width: 16),
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: activeColor,
+                  child: IconButton(
+                    icon: Icon(
+                      provider.isTourPaused
+                          ? Icons.play_arrow_rounded
+                          : Icons.pause_rounded,
+                      size: 28,
+                      color: isDark ? Colors.black : Colors.white,
+                    ),
+                    onPressed: () {
+                      if (provider.isTourPaused) {
+                        provider.resumeTour(ttsService, lgService);
+                      } else {
+                        provider.pauseTour(ttsService);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: Icon(
+                    provider.currentTourStepIndex == totalSteps - 1
+                        ? Icons.check_rounded
+                        : Icons.skip_next_rounded,
+                    size: 24,
+                  ),
+                  color: isDark ? Colors.white70 : Colors.black87,
+                  onPressed: () => provider.nextStep(ttsService, lgService),
+                ),
+                const SizedBox(width: 24),
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(0.15),
+                    foregroundColor: Colors.redAccent,
+                  ),
+                  icon: const Icon(Icons.stop_rounded, size: 20),
+                  onPressed: () => provider.stopTour(ttsService, lgService),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (provider.isVisualized) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1124) : Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: activeColor,
+                  foregroundColor: isDark ? Colors.black : Colors.white,
+                  minimumSize: const Size.fromHeight(46),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text(
+                  'START TOUR',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                onPressed: () => provider.startTour(ttsService, lgService),
+              ),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                side: const BorderSide(color: Colors.redAccent),
+                minimumSize: const Size(120, 46),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.clear),
+              label: const Text('CLEAR'),
+              onPressed: () {
+                provider.clearTourState();
+                lgService.cleanKML();
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          elevation: 4,
+          shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+          minimumSize: const Size.fromHeight(50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
+        icon: const Icon(Icons.language_rounded),
+        label: const Text(
+          'VISUALIZE ON GLOBE',
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
+        onPressed: () {
+          provider.generateSingleAttackTour(
+            widget.attack,
+            geminiService,
+            lgService,
+          );
+        },
       ),
     );
   }

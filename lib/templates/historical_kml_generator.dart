@@ -9,7 +9,9 @@ class HistoricalKmlGenerator {
     final String summary = data['summary'] ?? '';
 
     if (attacker == null || victim == null) {
-      throw Exception('JSON response is missing attacker or victim coordinates.');
+      throw Exception(
+        'JSON response is missing attacker or victim coordinates.',
+      );
     }
 
     final String attackerName = attacker['name'] ?? 'Threat Actor';

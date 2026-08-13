@@ -17,6 +17,7 @@ import 'theme/theme_notifier.dart';
 import 'theme/app_theme.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/splash_screen.dart';
 import 'pages/settings_page.dart';
 import 'pages/track_ip_page.dart';
 import 'pages/simulate_attack_page.dart';
@@ -85,7 +86,7 @@ class MainApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeNotifier.themeMode,
-      home: completedOnboarding ? const AppShell() : const OnboardingScreen(),
+      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

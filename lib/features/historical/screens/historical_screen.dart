@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cyber_visualiser/services/gemini_service.dart';
 import 'package:cyber_visualiser/services/lg_service.dart';
+import 'package:cyber_visualiser/services/text_to_speech_service.dart';
 import '../models/historical_attack.dart';
 import '../providers/historical_provider.dart';
 import '../widgets/historical_filter_bar.dart';
@@ -22,10 +25,20 @@ class HistoricalScreen extends StatefulWidget {
 class _HistoricalScreenState extends State<HistoricalScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
+  late final TextToSpeechService _ttsService;
+  late final LgService _lgService;
+  late final HistoricalProvider _historicalProvider;
 
   @override
   void initState() {
     super.initState();
+    _ttsService = Provider.of<TextToSpeechService>(context, listen: false);
+    _lgService = Provider.of<LgService>(context, listen: false);
+    _historicalProvider = Provider.of<HistoricalProvider>(
+      context,
+      listen: false,
+    );
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -35,13 +48,14 @@ class _HistoricalScreenState extends State<HistoricalScreen>
     }
     // Load historical attacks data after the frame renders
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HistoricalProvider>().loadHistoricalAttacks();
+      _historicalProvider.loadHistoricalAttacks();
     });
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _historicalProvider.stopTour(_ttsService, _lgService);
     super.dispose();
   }
 
@@ -61,10 +75,36 @@ class _HistoricalScreenState extends State<HistoricalScreen>
     );
   }
 
+  String _buildSearchContextText(HistoricalProvider provider) {
+    final List<String> parts = [];
+    if (provider.searchQuery.isNotEmpty) {
+      parts.add('Search: "${provider.searchQuery}"');
+    }
+    if (provider.selectedYear != null) {
+      parts.add('Year: ${provider.selectedYear}');
+    }
+    if (provider.selectedCategory != null) {
+      parts.add('Category: ${provider.selectedCategory}');
+    }
+    if (provider.selectedCountry != null) {
+      parts.add('Country: ${provider.selectedCountry}');
+    }
+    if (provider.selectedSector != null) {
+      parts.add('Sector: ${provider.selectedSector}');
+    }
+    if (parts.isEmpty) {
+      return 'All Incidents';
+    }
+    return parts.join(', ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final lgService = context.watch<LgService>();
+    final activeColor = isDark
+        ? const Color(0xFF00E5FF)
+        : Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       body: SafeArea(
@@ -130,6 +170,28 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                         onYearChanged: (y) => provider.filterYear(y),
                         onClearAll: () => provider.clearFilters(),
                       ),
+
+                      // Contextual Tour Request Banner or Tour Playback Panel
+                      if (provider.isTourScriptLoading ||
+                          provider.isTourPlaying ||
+                          provider.isVisualized)
+                        _buildCategoryTourPanel(
+                          context,
+                          provider,
+                          _ttsService,
+                          _lgService,
+                          isDark,
+                          activeColor,
+                        )
+                      else
+                        _buildContextualTourRequestCard(
+                          context,
+                          provider,
+                          Provider.of<GeminiService>(context, listen: false),
+                          _lgService,
+                          isDark,
+                          activeColor,
+                        ),
 
                       const SizedBox(height: 8),
 
@@ -316,6 +378,373 @@ class _HistoricalScreenState extends State<HistoricalScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildContextualTourRequestCard(
+    BuildContext context,
+    HistoricalProvider provider,
+    GeminiService geminiService,
+    LgService lgService,
+    bool isDark,
+    Color activeColor,
+  ) {
+    final hasSearchOrFilter =
+        provider.searchQuery.isNotEmpty ||
+        provider.selectedYear != null ||
+        provider.selectedCategory != null ||
+        provider.selectedCountry != null ||
+        provider.selectedSector != null;
+
+    if (!hasSearchOrFilter || provider.filteredAttacks.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Card(
+        color: isDark
+            ? const Color(0xFF0D1124)
+            : Colors.blue.shade50.withOpacity(0.3),
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF1F294D) : Colors.blue.shade100,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: activeColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.auto_awesome_motion,
+                      color: activeColor,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Visualize Filtered as 3D Tour',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Generates a KML map and narrator script. Note: Uses only the top 10 incidents to optimize tokens.',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: activeColor,
+                  foregroundColor: isDark ? Colors.black : Colors.white,
+                  minimumSize: const Size.fromHeight(40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.explore_rounded, size: 18),
+                label: const Text(
+                  'GENERATE CATEGORY TOUR',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                onPressed: () {
+                  final categoryText = _buildSearchContextText(provider);
+                  provider.generateCategoryTour(
+                    categoryText,
+                    provider.filteredAttacks,
+                    geminiService,
+                    lgService,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryTourPanel(
+    BuildContext context,
+    HistoricalProvider provider,
+    TextToSpeechService ttsService,
+    LgService lgService,
+    bool isDark,
+    Color activeColor,
+  ) {
+    if (provider.isTourScriptLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0D1124) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            ),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  provider.statusMessage,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (provider.isTourPlaying) {
+      final currentStep = provider.tourSteps[provider.currentTourStepIndex];
+      final totalSteps = provider.tourSteps.length;
+      final narration = currentStep['narration'] ?? '';
+      final title = currentStep['title'] ?? 'Tour Step';
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0D1124) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            ),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: totalSteps == 0
+                      ? 0.0
+                      : (provider.currentTourStepIndex + 1) / totalSteps,
+                  backgroundColor: isDark
+                      ? Colors.blueGrey.shade900
+                      : Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(activeColor),
+                  minHeight: 4,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '3D CATEGORY TOUR',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: activeColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    'Step ${provider.currentTourStepIndex + 1} of $totalSteps',
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                constraints: const BoxConstraints(maxHeight: 60),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF141A35) : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF1F294D)
+                        : Colors.grey.shade100,
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(
+                    narration,
+                    style: TextStyle(
+                      fontSize: 11,
+                      height: 1.4,
+                      color: isDark ? Colors.grey.shade300 : Colors.black87,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.skip_previous_rounded, size: 22),
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    onPressed: provider.currentTourStepIndex == 0
+                        ? null
+                        : () => provider.previousStep(ttsService, lgService),
+                  ),
+                  const SizedBox(width: 12),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: activeColor,
+                    child: IconButton(
+                      icon: Icon(
+                        provider.isTourPaused
+                            ? Icons.play_arrow_rounded
+                            : Icons.pause_rounded,
+                        size: 24,
+                        color: isDark ? Colors.black : Colors.white,
+                      ),
+                      onPressed: () {
+                        if (provider.isTourPaused) {
+                          provider.resumeTour(ttsService, lgService);
+                        } else {
+                          provider.pauseTour(ttsService);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    icon: Icon(
+                      provider.currentTourStepIndex == totalSteps - 1
+                          ? Icons.check_rounded
+                          : Icons.skip_next_rounded,
+                      size: 22,
+                    ),
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    onPressed: () => provider.nextStep(ttsService, lgService),
+                  ),
+                  const SizedBox(width: 20),
+                  IconButton.filled(
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.redAccent.withOpacity(0.15),
+                      foregroundColor: Colors.redAccent,
+                      padding: const EdgeInsets.all(8),
+                    ),
+                    icon: const Icon(Icons.stop_rounded, size: 18),
+                    onPressed: () => provider.stopTour(ttsService, lgService),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (provider.isVisualized) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0D1124) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF1F294D) : Colors.grey.shade200,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: activeColor,
+                    foregroundColor: isDark ? Colors.black : Colors.white,
+                    minimumSize: const Size.fromHeight(40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                  label: const Text(
+                    'START TOUR',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () => provider.startTour(ttsService, lgService),
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  side: const BorderSide(color: Colors.redAccent),
+                  minimumSize: const Size(100, 40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(Icons.clear, size: 16),
+                label: const Text('CLEAR', style: TextStyle(fontSize: 12)),
+                onPressed: () {
+                  provider.clearTourState();
+                  lgService.cleanKML();
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildHeaderBanner(BuildContext context, bool isDark) {
