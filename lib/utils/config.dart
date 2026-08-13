@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AppConfig {
   static const String mcpEndpoint = 'https://mcp.honeylabs.net/mcp';
@@ -23,7 +23,9 @@ class AppConfig {
   static const String _keyUserAbuseIpDbApiKey = 'user_abuseipdb_api_key';
   static const String _keyUserGeminiApiKey = 'user_gemini_api_key';
 
-  /// Loads configuration values from the .env asset file and SharedPreferences
+  static const _secureStorage = FlutterSecureStorage();
+
+  /// Loads configuration values from the .env asset file and FlutterSecureStorage
   static Future<void> loadConfig() async {
     try {
       final envContent = await rootBundle.loadString('.env');
@@ -53,16 +55,18 @@ class AppConfig {
     }
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      userApiKey = prefs.getString(_keyUserHoneyLabsApiKey) ?? '';
-      userAbuseIpDbApiKey = prefs.getString(_keyUserAbuseIpDbApiKey) ?? '';
-      userGeminiApiKey = prefs.getString(_keyUserGeminiApiKey) ?? '';
+      userApiKey =
+          await _secureStorage.read(key: _keyUserHoneyLabsApiKey) ?? '';
+      userAbuseIpDbApiKey =
+          await _secureStorage.read(key: _keyUserAbuseIpDbApiKey) ?? '';
+      userGeminiApiKey =
+          await _secureStorage.read(key: _keyUserGeminiApiKey) ?? '';
     } catch (e) {
       print('cyber visualiser Config Error: Failed to load user API keys: $e');
     }
   }
 
-  /// Saves custom user API keys to SharedPreferences
+  /// Saves custom user API keys to FlutterSecureStorage
   static Future<void> saveUserKeys(
     String honeyLabsKey,
     String abuseIpDbKey,
@@ -73,10 +77,18 @@ class AppConfig {
     userGeminiApiKey = geminiKey.trim();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_keyUserHoneyLabsApiKey, userApiKey);
-      await prefs.setString(_keyUserAbuseIpDbApiKey, userAbuseIpDbApiKey);
-      await prefs.setString(_keyUserGeminiApiKey, userGeminiApiKey);
+      await _secureStorage.write(
+        key: _keyUserHoneyLabsApiKey,
+        value: userApiKey,
+      );
+      await _secureStorage.write(
+        key: _keyUserAbuseIpDbApiKey,
+        value: userAbuseIpDbApiKey,
+      );
+      await _secureStorage.write(
+        key: _keyUserGeminiApiKey,
+        value: userGeminiApiKey,
+      );
     } catch (e) {
       print('cyber visualiser Config Error: Failed to save user API keys: $e');
     }
