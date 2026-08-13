@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math';
+import 'dart:io';
+import 'dart:convert';
 import 'package:provider/provider.dart';
 import '../services/lg_service.dart';
 
@@ -45,21 +47,90 @@ class _MapPageState extends State<MapPage> {
   double tiltvalue = 0.0;
   late double zoomvalue;
 
+  RawDatagramSocket? _udpSocket;
+  bool _hasGesture = false;
+
   @override
   void initState() {
     super.initState();
     mapController = MapController();
     zoomvalue = 591657550.500000 / pow(2, 12.0 + 3);
+    _startUdpListener();
   }
 
-  void _onCameraMove(MapCamera camera) {
-    longvalue = camera.center.longitude;
-    latvalue = camera.center.latitude;
-    bearingvalue = camera.rotation;
-    zoomvalue = 591657550.500000 / pow(2, camera.zoom + 3);
+  @override
+  void dispose() {
+    _udpSocket?.close();
+    super.dispose();
+  }
+
+  void _startUdpListener() async {
+    try {
+      _udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 21567);
+      _udpSocket!.listen((RawSocketEvent event) {
+        if (event == RawSocketEvent.read) {
+          final datagram = _udpSocket!.receive();
+          if (datagram != null) {
+            final message = utf8.decode(datagram.data);
+            _handleViewSyncMessage(message);
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('Error starting UDP listener: $e');
+    }
+  }
+
+  void _handleViewSyncMessage(String message) {
+    final parts = message.split(',');
+    if (parts.length >= 7) {
+      final lat = double.tryParse(parts[1]);
+      final lon = double.tryParse(parts[2]);
+      final altitude = double.tryParse(parts[3]);
+      final yaw = double.tryParse(parts[4]);
+
+      if (lat != null && lon != null) {
+        double zoom = 12.0;
+        if (altitude != null && altitude > 0) {
+          final powVal = 591657550.500000 / altitude;
+          if (powVal > 0) {
+            zoom = (log(powVal) / log(2)) - 3.0;
+            zoom = zoom.clamp(1.0, 22.0);
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            latvalue = lat;
+            longvalue = lon;
+            if (yaw != null) {
+              bearingvalue = yaw;
+            }
+
+            mapController.move(LatLng(lat, lon), zoom);
+            if (yaw != null) {
+              mapController.rotate(yaw);
+            }
+          });
+        }
+      }
+    }
+  }
+
+  void _onCameraMove(MapCamera camera, bool hasGesture) {
+    _hasGesture = hasGesture;
+    if (hasGesture) {
+      longvalue = camera.center.longitude;
+      latvalue = camera.center.latitude;
+      bearingvalue = camera.rotation;
+      zoomvalue = 591657550.500000 / pow(2, camera.zoom + 3);
+    }
   }
 
   void _onCameraIdle() async {
+    if (!_hasGesture) return;
+    _hasGesture = false;
+
     final lgService = Provider.of<LgService>(context, listen: false);
     LookAt flyto = LookAt(
       longvalue,
@@ -91,7 +162,7 @@ class _MapPageState extends State<MapPage> {
           initialCenter: _center,
           initialZoom: 12.0,
           onPositionChanged: (camera, hasGesture) {
-            _onCameraMove(camera);
+            _onCameraMove(camera, hasGesture);
           },
           onMapEvent: (event) {
             if (event is MapEventMoveEnd || event is MapEventRotateEnd) {
