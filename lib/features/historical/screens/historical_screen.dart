@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -108,46 +107,47 @@ class _HistoricalScreenState extends State<HistoricalScreen>
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeaderBanner(context, isDark),
-            _buildRigConnectionBar(lgService, isDark),
-            Expanded(
-              child: Consumer<HistoricalProvider>(
-                builder: (context, provider, child) {
-                  if (provider.loading && provider.allAttacks.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text(
-                            'Loading incidents database...',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+        child: Consumer<HistoricalProvider>(
+          builder: (context, provider, child) {
+            if (provider.loading && provider.allAttacks.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(
+                      'Loading incidents database...',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-                  // Dynamically compute stats from filtered results
-                  final totalIncidents = provider.filteredAttacks.length;
-                  final uniqueCountriesCount = provider.filteredAttacks
-                      .map((e) => e.victim.country)
-                      .where((c) => c.isNotEmpty)
-                      .toSet()
-                      .length;
-                  final uniqueCategoriesCount = provider.filteredAttacks
-                      .map((e) => e.attack.category)
-                      .where((c) => c.isNotEmpty)
-                      .toSet()
-                      .length;
+            // Dynamically compute stats from filtered results
+            final totalIncidents = provider.filteredAttacks.length;
+            final uniqueCountriesCount = provider.filteredAttacks
+                .map((e) => e.victim.country)
+                .where((c) => c.isNotEmpty)
+                .toSet()
+                .length;
+            final uniqueCategoriesCount = provider.filteredAttacks
+                .map((e) => e.attack.category)
+                .where((c) => c.isNotEmpty)
+                .toSet()
+                .length;
 
-                  return Column(
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      _buildHeaderBanner(context, isDark),
+                      _buildRigConnectionBar(lgService, isDark),
+                      
                       // Search Bar
                       HistoricalSearchBar(
                         initialQuery: provider.searchQuery,
@@ -270,111 +270,93 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                           ],
                         ),
                       ),
-
-                      // Scrollable Incident List or Empty State
-                      Expanded(
-                        child: provider.filteredAttacks.isEmpty
-                            ? Center(
-                                child: SingleChildScrollView(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.find_in_page_outlined,
-                                        size: 64,
-                                        color: isDark
-                                            ? Colors.grey.shade700
-                                            : Colors.grey.shade400,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No cyber incidents found',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 32.0,
-                                        ),
-                                        child: Text(
-                                          'Try adjusting your search queries or clearing active filter chips.',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(color: Colors.grey),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 20),
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          minimumSize: const Size(160, 40),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                          ),
-                                        ),
-                                        onPressed: () =>
-                                            provider.clearFilters(),
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text('Reset All Filters'),
-                                      ),
-                                    ],
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+                
+                // Scrollable Incident List or Empty State
+                if (provider.filteredAttacks.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.find_in_page_outlined,
+                              size: 64,
+                              color: isDark
+                                  ? Colors.grey.shade700
+                                  : Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No cyber incidents found',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Try adjusting your search queries or clearing active filter chips.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(160, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    20,
                                   ),
                                 ),
-                              )
-                            : ListView.builder(
-                                itemCount: provider.filteredAttacks.length,
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                itemBuilder: (context, index) {
-                                  final attack =
-                                      provider.filteredAttacks[index];
-                                  return IncidentCard(
-                                    attack: attack,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              HistoricalDetailsScreen(
-                                                attack: attack,
-                                              ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
                               ),
+                              onPressed: () => provider.clearFilters(),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Reset All Filters'),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          final provider = context.read<HistoricalProvider>();
-          _openGeminiAssistant(
-            context,
-            year: provider.selectedYear,
-            category: provider.selectedCategory,
-            contextAttacks: provider.filteredAttacks,
-          );
-        },
-        backgroundColor: isDark
-            ? const Color(0xFF00E5FF)
-            : const Color(0xFF3B82F6),
-        foregroundColor: isDark ? Colors.black : Colors.white,
-        icon: const Icon(Icons.auto_awesome),
-        label: const Text(
-          'Ask Gemini',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final attack = provider.filteredAttacks[index];
+                        return IncidentCard(
+                          attack: attack,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HistoricalDetailsScreen(
+                                  attack: attack,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      childCount: provider.filteredAttacks.length,
+                    ),
+                  ),
+                
+                // Add bottom padding to prevent content from being hidden behind floating bottom nav bar
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 100),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -803,6 +785,38 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.auto_awesome),
+            tooltip: 'Ask Gemini',
+            style: IconButton.styleFrom(
+              backgroundColor: isDark
+                  ? const Color(0xFF00E5FF).withValues(alpha: 0.12)
+                  : const Color(0xFF3B82F6).withValues(alpha: 0.08),
+              foregroundColor: isDark
+                  ? const Color(0xFF00E5FF)
+                  : const Color(0xFF3B82F6),
+              side: BorderSide(
+                color: isDark
+                    ? const Color(0xFF00E5FF).withValues(alpha: 0.3)
+                    : const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                width: 1.2,
+              ),
+              padding: const EdgeInsets.all(10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            onPressed: () {
+              final provider = context.read<HistoricalProvider>();
+              _openGeminiAssistant(
+                context,
+                year: provider.selectedYear,
+                category: provider.selectedCategory,
+                contextAttacks: provider.filteredAttacks,
+              );
+            },
           ),
         ],
       ),
