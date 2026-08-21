@@ -67,14 +67,25 @@ class _TrackIpPageState extends State<TrackIpPage>
     return null;
   }
 
-  void _submitSearch(TrackIpProvider provider, TrackIpLgService lgService) {
+  void _submitSearch(
+    TrackIpProvider provider,
+    TrackIpLgService lgService,
+  ) async {
     if (_formKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
-      provider.fetchIpDetails(
+      await provider.fetchIpDetails(
         ipAddress: _ipController.text.trim(),
         maxAgeInDays: _maxAgeInDays.toInt(),
         lgService: lgService,
       );
+      if (provider.errorMessage != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('IP Lookup Failed: ${provider.errorMessage}'),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+      }
     }
   }
 
@@ -100,6 +111,18 @@ class _TrackIpPageState extends State<TrackIpPage>
           geminiService: geminiService,
           lgService: lgService,
         );
+      }
+
+      if (mounted) {
+        final err = provider.geminiError ?? provider.errorMessage;
+        if (err != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gemini Analysis Failed: $err'),
+              backgroundColor: Colors.red.shade800,
+            ),
+          );
+        }
       }
 
       if (!mounted) return;

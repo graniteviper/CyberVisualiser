@@ -13,11 +13,9 @@ class AppConfig {
   static String userAbuseIpDbApiKey = '';
   static String userGeminiApiKey = '';
 
-  static String get apiKey => userApiKey.isNotEmpty ? userApiKey : envApiKey;
-  static String get abuseIpDbApiKey =>
-      userAbuseIpDbApiKey.isNotEmpty ? userAbuseIpDbApiKey : envAbuseIpDbApiKey;
-  static String get geminiApiKey =>
-      userGeminiApiKey.isNotEmpty ? userGeminiApiKey : envGeminiApiKey;
+  static String get apiKey => userApiKey;
+  static String get abuseIpDbApiKey => userAbuseIpDbApiKey;
+  static String get geminiApiKey => userGeminiApiKey;
 
   static const String _keyUserHoneyLabsApiKey = 'user_honeylabs_api_key';
   static const String _keyUserAbuseIpDbApiKey = 'user_abuseipdb_api_key';

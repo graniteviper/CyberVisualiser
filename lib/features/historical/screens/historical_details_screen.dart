@@ -671,12 +671,20 @@ class _HistoricalDetailsScreenState extends State<HistoricalDetailsScreen> {
           'VISUALIZE ON GLOBE',
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
         ),
-        onPressed: () {
-          provider.generateSingleAttackTour(
+        onPressed: () async {
+          await provider.generateSingleAttackTour(
             widget.attack,
             geminiService,
             lgService,
           );
+          if (provider.tourError != null && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to generate tour: ${provider.tourError}'),
+                backgroundColor: Colors.red.shade800,
+              ),
+            );
+          }
         },
       ),
     );

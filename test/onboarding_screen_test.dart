@@ -98,8 +98,21 @@ void main() {
     await tester.pumpAndSettle();
 
     // Slide 3: API keys page verification
-    expect(find.text('API Integrations (Optional)'), findsOneWidget);
+    expect(find.text('API Integrations'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'HoneyLabs API Key'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'HoneyLabs API Key'),
+      'mock-hl-key',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'AbuseIPDB API Key'),
+      'mock-abuse-key',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Gemini API Key'),
+      'mock-gemini-key',
+    );
 
     // Tap Next to navigate to Slide 4
     await tester.tap(find.text('Next'));

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import 'onboarding_screen.dart';
+import '../utils/config.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -45,13 +46,20 @@ class _SplashScreenState extends State<SplashScreen>
     final prefs = await SharedPreferences.getInstance();
     final completedOnboarding = prefs.getBool('completed_onboarding') ?? false;
 
+    final hasApiKeys =
+        AppConfig.userApiKey.isNotEmpty &&
+        AppConfig.userAbuseIpDbApiKey.isNotEmpty &&
+        AppConfig.userGeminiApiKey.isNotEmpty;
+
     if (!mounted) return;
 
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            completedOnboarding ? const AppShell() : const OnboardingScreen(),
+            (completedOnboarding && hasApiKeys)
+            ? const AppShell()
+            : const OnboardingScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

@@ -104,6 +104,8 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
   late final PageController _pageController;
+  late final LgService _lgService;
+  bool? _wasConnected;
 
   final List<Widget> _pages = const [
     DashboardScreen(),
@@ -117,9 +119,13 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedIndex);
+    _lgService = Provider.of<LgService>(context, listen: false);
+    _wasConnected = _lgService.isConnected;
+    _lgService.addListener(_onLgConnectionChanged);
+
     if (widget.autoInitializeConnection) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<LgService>().initializeConnection().catchError((e) {
+        _lgService.initializeConnection().catchError((e) {
           debugPrint('Failed to auto-initialize LG connection: $e');
         });
       });
@@ -129,7 +135,29 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _pageController.dispose();
+    _lgService.removeListener(_onLgConnectionChanged);
     super.dispose();
+  }
+
+  void _onLgConnectionChanged() {
+    final nowConnected = _lgService.isConnected;
+    if (_wasConnected != nowConnected) {
+      _wasConnected = nowConnected;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              nowConnected
+                  ? 'Liquid Galaxy Rig Connected successfully!'
+                  : 'Liquid Galaxy Rig Disconnected.',
+            ),
+            backgroundColor: nowConnected
+                ? Colors.green.shade800
+                : Colors.red.shade800,
+          ),
+        );
+      }
+    }
   }
 
   void _onItemTapped(int index) {

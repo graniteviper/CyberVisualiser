@@ -23,6 +23,7 @@ class HistoricalProvider extends ChangeNotifier {
   String? _selectedSector;
   int? _selectedYear;
   String _searchQuery = "";
+  String? _errorMessage;
 
   // Tour State Variables
   bool _isTourScriptLoading = false;
@@ -41,6 +42,7 @@ class HistoricalProvider extends ChangeNotifier {
 
   // Getters for states
   bool get loading => _loading;
+  String? get errorMessage => _errorMessage;
   List<HistoricalAttack> get allAttacks => _allAttacks;
   List<HistoricalAttack> get filteredAttacks => _filteredAttacks;
   String? get selectedCountry => _selectedCountry;
@@ -102,13 +104,16 @@ class HistoricalProvider extends ChangeNotifier {
   /// Loads historical cyber attacks from the repository.
   Future<void> loadHistoricalAttacks() async {
     _loading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       _allAttacks = await _repository.getHistoricalAttacks();
+      _errorMessage = null;
       _applyFilters();
     } catch (e) {
       debugPrint("Error in HistoricalProvider.loadHistoricalAttacks: $e");
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _loading = false;
       notifyListeners();

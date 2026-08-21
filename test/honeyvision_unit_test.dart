@@ -135,15 +135,15 @@ void main() {
     });
   });
 
-  group('AppConfig API Keys and Fallback Tests', () {
-    test('Should fall back to env key if user key is empty', () {
+  group('AppConfig API Keys Tests', () {
+    test('Should return user key directly and not fall back to env key', () {
       AppConfig.envApiKey = 'env-hl-key';
       AppConfig.envAbuseIpDbApiKey = 'env-abuse-key';
       AppConfig.userApiKey = '';
       AppConfig.userAbuseIpDbApiKey = '';
 
-      expect(AppConfig.apiKey, 'env-hl-key');
-      expect(AppConfig.abuseIpDbApiKey, 'env-abuse-key');
+      expect(AppConfig.apiKey, '');
+      expect(AppConfig.abuseIpDbApiKey, '');
     });
 
     test('Should prioritize user custom keys if provided', () {

@@ -309,10 +309,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    onPressed: () {
-                                      attackProvider.fetchRecentTelemetry(
+                                    onPressed: () async {
+                                      await attackProvider.fetchRecentTelemetry(
                                         minutes: 30,
                                       );
+                                      if (attackProvider.errorMessage != null &&
+                                          mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Telemetry Fetch Failed: ${attackProvider.errorMessage}',
+                                            ),
+                                            backgroundColor:
+                                                Colors.red.shade800,
+                                          ),
+                                        );
+                                      }
                                     },
                                   ),
                               ],

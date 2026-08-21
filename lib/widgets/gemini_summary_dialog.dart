@@ -96,10 +96,17 @@ class _GeminiSummaryDialogState extends State<GeminiSummaryDialog> {
       }
     } catch (e) {
       if (mounted) {
+        final error = e.toString().replaceAll('Exception: ', '');
         setState(() {
-          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _errorMessage = error;
           _isLoading = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gemini Summary Error: $error'),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
       }
     }
   }

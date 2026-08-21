@@ -46,8 +46,18 @@ class _HistoricalScreenState extends State<HistoricalScreen>
       _pulseController.repeat(reverse: true);
     }
     // Load historical attacks data after the frame renders
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _historicalProvider.loadHistoricalAttacks();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _historicalProvider.loadHistoricalAttacks();
+      if (_historicalProvider.errorMessage != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to load incidents: ${_historicalProvider.errorMessage}',
+            ),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+      }
     });
   }
 
@@ -147,7 +157,7 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                     children: [
                       _buildHeaderBanner(context, isDark),
                       _buildRigConnectionBar(lgService, isDark),
-                      
+
                       // Search Bar
                       HistoricalSearchBar(
                         initialQuery: provider.searchQuery,
@@ -274,7 +284,7 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                     ],
                   ),
                 ),
-                
+
                 // Scrollable Incident List or Empty State
                 if (provider.filteredAttacks.isEmpty)
                   SliverFillRemaining(
@@ -295,12 +305,8 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                             const SizedBox(height: 16),
                             Text(
                               'No cyber incidents found',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             const Text(
@@ -313,9 +319,7 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                               style: ElevatedButton.styleFrom(
                                 minimumSize: const Size(160, 40),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    20,
-                                  ),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
                               ),
                               onPressed: () => provider.clearFilters(),
@@ -329,31 +333,25 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                   )
                 else
                   SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final attack = provider.filteredAttacks[index];
-                        return IncidentCard(
-                          attack: attack,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HistoricalDetailsScreen(
-                                  attack: attack,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      childCount: provider.filteredAttacks.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final attack = provider.filteredAttacks[index];
+                      return IncidentCard(
+                        attack: attack,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  HistoricalDetailsScreen(attack: attack),
+                            ),
+                          );
+                        },
+                      );
+                    }, childCount: provider.filteredAttacks.length),
                   ),
-                
+
                 // Add bottom padding to prevent content from being hidden behind floating bottom nav bar
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 100),
-                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             );
           },
@@ -457,14 +455,24 @@ class _HistoricalScreenState extends State<HistoricalScreen>
                     letterSpacing: 0.5,
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   final categoryText = _buildSearchContextText(provider);
-                  provider.generateCategoryTour(
+                  await provider.generateCategoryTour(
                     categoryText,
                     provider.filteredAttacks,
                     geminiService,
                     lgService,
                   );
+                  if (provider.tourError != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Failed to generate category tour: ${provider.tourError}',
+                        ),
+                        backgroundColor: Colors.red.shade800,
+                      ),
+                    );
+                  }
                 },
               ),
             ],

@@ -80,6 +80,24 @@ class _SettingsPageState extends State<SettingsPage> {
       return false;
     }
 
+    final honeyKey = _honeyLabsKeyController.text.trim();
+    final abuseKey = _abuseIpDbKeyController.text.trim();
+    final geminiKey = _geminiKeyController.text.trim();
+
+    if (honeyKey.isEmpty || abuseKey.isEmpty || geminiKey.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'All API keys (HoneyLabs, AbuseIPDB, Gemini) are mandatory and required.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    }
+
     service.updateConnectionSettings(
       ip: ip,
       port: port,
@@ -91,9 +109,6 @@ class _SettingsPageState extends State<SettingsPage> {
     await service.saveConnectionSettings();
 
     // Save custom user API keys
-    final honeyKey = _honeyLabsKeyController.text.trim();
-    final abuseKey = _abuseIpDbKeyController.text.trim();
-    final geminiKey = _geminiKeyController.text.trim();
     await AppConfig.saveUserKeys(honeyKey, abuseKey, geminiKey);
 
     if (showSnackBar && mounted) {
@@ -334,7 +349,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Custom keys override defaults loaded from the assets/.env file',
+                    'All API keys are mandatory and required to use the app.',
                     style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
@@ -411,7 +426,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       } else {
                         final saved = await _saveSettings(showSnackBar: false);
                         if (!saved) return;
-                        
+
                         await service.connectToLG();
                         final msg = service.isConnected
                             ? 'Connected successfully'
