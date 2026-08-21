@@ -88,46 +88,21 @@ cyber visualiser leverages three core external APIs:
 ### 📋 Prerequisites
 * **Flutter SDK:** Version `^3.12.0` (Dart `^3.0.0`)
 * **Git** installed on your system.
-* Active API Keys for **HoneyLabs**, **AbuseIPDB**, and **Gemini AI**.
-* A Google Maps API key (for in-app map rendering).
+* Active API Keys for **HoneyLabs**, **AbuseIPDB**, and **Gemini AI** (mandatory to run the application).
+* *Note:* In-app map rendering uses OpenStreetMap via `flutter_map`, so no Google Maps API keys are required.
 
 ### 🔧 Environment Setup
 
-#### 1. Threat Intelligence Credentials
-You can configure threat credentials in two ways:
+#### API Credentials Configuration (Mandatory)
+Entering your own API keys in the app is **mandatory and required**. Default or hardcoded API keys are not provided, and fallback credentials from `.env` are not used.
 
-##### Option A: User Settings Interface (Recommended)
 1. Launch the application.
-2. Open the **Drawer Menu** and select **Connection Settings**.
-3. Scroll to the **API Credentials** card.
-4. Input your custom **HoneyLabs API Key**, **AbuseIPDB API Key**, and **Gemini API Key** and tap **Save Settings**.
-5. Custom keys are securely saved locally via `SharedPreferences`.
+2. If this is the first launch, the app will automatically present the **Onboarding Screen**.
+3. Navigate to **Slide 3 (API Integrations)**.
+4. Input your custom **HoneyLabs API Key**, **AbuseIPDB API Key**, and **Gemini API Key**.
+5. Tap **Next** and complete onboarding to save settings.
+6. The keys are securely saved locally via `FlutterSecureStorage` and can be managed later on the **Settings** page.
 
-##### Option B: Assets .env File
-1. Create a file named `.env` in the root folder of the project.
-2. Fill in your credentials using the following structure:
-   ```env
-   # HoneyLabs API key for honeypot telemetry
-   HONEYLAB_API_KEY = your_honeylab_key_here
-
-   # AbuseIPDB API key for reputation lookups
-   ABUSEIPDB_API_KEY = your_abuseipdb_key_here
-
-   # Gemini API key for intelligence analysis & simulation
-   GEMINI_API_KEY = your_gemini_key_here
-   ```
-3. Verify that `.env` is listed under assets in your `pubspec.yaml` to ensure it is bundled correctly into the application executable resources at runtime.
-
-#### 2. Android Google Maps API Key Setup
-If running on Android, you must configure the Google Maps API Key:
-1. Locate the file `strings.xml.example` in the root directory. Change it's name to `strings.xml` and move it to `android/app/src/main/res/values`.
-2. Open that `strings.xml` and replace the value with your actual Google Maps API key:
-   ```xml
-   <?xml version="1.0" encoding="utf-8"?>
-   <resources>
-       <string name="GOOGLE_MAPS_API_KEY">YOUR_GOOGLE_MAPS_API_KEY</string>
-   </resources> 
-   ```
 
 ---
 
