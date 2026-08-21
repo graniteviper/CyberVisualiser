@@ -63,7 +63,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.dispose();
   }
 
-  Future<void> _saveSettings() async {
+  Future<bool> _saveSettings({bool showSnackBar = true}) async {
     final service = context.read<LgService>();
     final ip = _ipController.text.trim();
     final port = int.tryParse(_portController.text.trim()) ?? 22;
@@ -77,7 +77,25 @@ class _SettingsPageState extends State<SettingsPage> {
           const SnackBar(content: Text('Please enter valid settings.')),
         );
       }
-      return;
+      return false;
+    }
+
+    final honeyKey = _honeyLabsKeyController.text.trim();
+    final abuseKey = _abuseIpDbKeyController.text.trim();
+    final geminiKey = _geminiKeyController.text.trim();
+
+    if (honeyKey.isEmpty || abuseKey.isEmpty || geminiKey.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'All API keys (HoneyLabs, AbuseIPDB, Gemini) are mandatory and required.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
     }
 
     service.updateConnectionSettings(
@@ -91,18 +109,16 @@ class _SettingsPageState extends State<SettingsPage> {
     await service.saveConnectionSettings();
 
     // Save custom user API keys
-    final honeyKey = _honeyLabsKeyController.text.trim();
-    final abuseKey = _abuseIpDbKeyController.text.trim();
-    final geminiKey = _geminiKeyController.text.trim();
     await AppConfig.saveUserKeys(honeyKey, abuseKey, geminiKey);
 
-    if (mounted) {
+    if (showSnackBar && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Connection settings and API keys saved.'),
         ),
       );
     }
+    return true;
   }
 
   Future<void> _scanQrSettings() async {
@@ -333,7 +349,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Custom keys override defaults loaded from the assets/.env file',
+                    'All API keys are mandatory and required to use the app.',
                     style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
@@ -370,7 +386,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    onPressed: _saveSettings,
+                    onPressed: () => _saveSettings(),
                     child: const Text(
                       'Save Settings',
                       style: TextStyle(fontWeight: FontWeight.bold),
@@ -408,6 +424,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       if (service.isConnected) {
                         service.disconnect();
                       } else {
+                        final saved = await _saveSettings(showSnackBar: false);
+                        if (!saved) return;
+
                         await service.connectToLG();
                         final msg = service.isConnected
                             ? 'Connected successfully'

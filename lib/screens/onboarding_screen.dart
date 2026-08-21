@@ -190,6 +190,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finishOnboarding() async {
+    final honeyKey = _honeyLabsKeyController.text.trim();
+    final abuseKey = _abuseIpDbKeyController.text.trim();
+    final geminiKey = _geminiKeyController.text.trim();
+
+    if (honeyKey.isEmpty || abuseKey.isEmpty || geminiKey.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'All API keys (HoneyLabs, AbuseIPDB, Gemini) are mandatory and required.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      _pageController.animateToPage(
+        2,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
+
     await _saveAllSettings();
 
     // Mark onboarding as completed in SharedPreferences
@@ -380,6 +401,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ),
                           onPressed: () {
+                            if (_currentPage == 2) {
+                              final honeyKey = _honeyLabsKeyController.text
+                                  .trim();
+                              final abuseKey = _abuseIpDbKeyController.text
+                                  .trim();
+                              final geminiKey = _geminiKeyController.text
+                                  .trim();
+
+                              if (honeyKey.isEmpty ||
+                                  abuseKey.isEmpty ||
+                                  geminiKey.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'All API keys (HoneyLabs, AbuseIPDB, Gemini) are mandatory and required.',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+                            }
                             _pageController.nextPage(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut,
@@ -732,7 +775,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'API Integrations (Optional)',
+            'API Integrations',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -741,7 +784,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Unlocks advanced capabilities and AI assistance. Leaving these blank will fallback to default environment credentials if available.',
+            'All API keys are mandatory and required to use the app. Default credentials are not provided.',
             style: TextStyle(
               fontSize: 13,
               color: isDark ? Colors.grey.shade400 : Colors.black54,

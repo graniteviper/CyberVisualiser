@@ -324,7 +324,8 @@ class TrackIpLgService {
     required double heading,
   }) async {
     try {
-      final lookAt = '''<LookAt>
+      final lookAt =
+          '''<LookAt>
           <longitude>$longitude</longitude>
           <latitude>$latitude</latitude>
           <altitude>0</altitude>

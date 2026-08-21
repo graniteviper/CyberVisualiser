@@ -6,7 +6,7 @@ import '../services/lg_service.dart';
 import '../services/lg_adapter.dart';
 import '../widgets/event_details_panel.dart';
 import '../widgets/gemini_summary_dialog.dart';
-import '../widgets/google_maps.dart';
+import '../widgets/custom_map.dart';
 import '../services/gemini_service.dart';
 import '../services/text_to_speech_service.dart';
 
@@ -309,10 +309,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    onPressed: () {
-                                      attackProvider.fetchRecentTelemetry(
+                                    onPressed: () async {
+                                      await attackProvider.fetchRecentTelemetry(
                                         minutes: 30,
                                       );
+                                      if (attackProvider.errorMessage != null &&
+                                          mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Telemetry Fetch Failed: ${attackProvider.errorMessage}',
+                                            ),
+                                            backgroundColor:
+                                                Colors.red.shade800,
+                                          ),
+                                        );
+                                      }
                                     },
                                   ),
                               ],

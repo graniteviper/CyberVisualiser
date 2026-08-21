@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,6 +29,15 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
+    const secureChannel = MethodChannel(
+      'plugins.it_nomads.com/flutter_secure_storage',
+    );
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      secureChannel,
+      (MethodCall methodCall) async {
+        return null;
+      },
+    );
 
     final apiService = HoneyLabsService();
     final repository = AttackRepository(apiService);
@@ -88,8 +98,21 @@ void main() {
     await tester.pumpAndSettle();
 
     // Slide 3: API keys page verification
-    expect(find.text('API Integrations (Optional)'), findsOneWidget);
+    expect(find.text('API Integrations'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'HoneyLabs API Key'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'HoneyLabs API Key'),
+      'mock-hl-key',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'AbuseIPDB API Key'),
+      'mock-abuse-key',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Gemini API Key'),
+      'mock-gemini-key',
+    );
 
     // Tap Next to navigate to Slide 4
     await tester.tap(find.text('Next'));

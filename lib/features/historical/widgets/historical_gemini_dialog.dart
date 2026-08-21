@@ -142,17 +142,24 @@ class _HistoricalGeminiDialogState extends State<HistoricalGeminiDialog> {
       }
     } catch (e) {
       if (mounted) {
+        final error = e.toString().replaceAll('Exception: ', '');
         setState(() {
           _messages.add(
             ChatMessage(
               text:
-                  "Sorry, I encountered an error generating details:\n\n*${e.toString().replaceAll('Exception: ', '')}*",
+                  "Sorry, I encountered an error generating details:\n\n*$error*",
               isUser: false,
               timestamp: DateTime.now(),
             ),
           );
           _isLoading = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gemini Assistant Error: $error'),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
         _scrollToBottom();
       }
     }

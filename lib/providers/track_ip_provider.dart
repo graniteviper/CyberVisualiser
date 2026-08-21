@@ -167,7 +167,10 @@ class TrackIpProvider extends ChangeNotifier {
   }
 
   /// Resets the provider state and clears any LG visuals.
-  void clearState({TrackIpLgService? lgService, TextToSpeechService? ttsService}) {
+  void clearState({
+    TrackIpLgService? lgService,
+    TextToSpeechService? ttsService,
+  }) {
     if (ttsService != null) {
       stopTour(ttsService);
     }
@@ -206,7 +209,7 @@ class TrackIpProvider extends ChangeNotifier {
     try {
       final prompt = GeminiPromptTemplate.fillTourScriptPrompt(_report!);
       final responseText = await geminiService.generateThreatSummary(prompt);
-      
+
       // Attempt to clean JSON formatting from response text if present
       String cleanJson = responseText.trim();
       if (cleanJson.startsWith('```')) {
@@ -225,7 +228,9 @@ class TrackIpProvider extends ChangeNotifier {
       try {
         scriptData = json.decode(cleanJson) as Map<String, dynamic>;
       } catch (e) {
-        debugPrint('cyber visualiser Tour JSON Parse Error: $e. Falling back to template-based narration.');
+        debugPrint(
+          'cyber visualiser Tour JSON Parse Error: $e. Falling back to template-based narration.',
+        );
         scriptData = _generateFallbackScript(_report!);
       }
 
@@ -291,7 +296,8 @@ class TrackIpProvider extends ChangeNotifier {
           ? list.first.reporterCountryName
           : countryCode;
 
-      final narration = regionNarrations[countryCode.toUpperCase()] ??
+      final narration =
+          regionNarrations[countryCode.toUpperCase()] ??
           'This location reported ${list.length} threat incident(s) from $countryName against the source IP.';
 
       steps.add({
@@ -311,7 +317,9 @@ class TrackIpProvider extends ChangeNotifier {
       'longitude': sCoord.longitude,
       'range': 4000000.0,
       'tilt': 35.0,
-      'narration': script['conclusion'] ?? 'This concludes the threat intelligence profile for IP ${report.ipAddress}.',
+      'narration':
+          script['conclusion'] ??
+          'This concludes the threat intelligence profile for IP ${report.ipAddress}.',
     });
 
     return steps;
@@ -320,7 +328,8 @@ class TrackIpProvider extends ChangeNotifier {
   /// Template fallback script generator
   Map<String, dynamic> _generateFallbackScript(AbuseIpReport report) {
     // Basic templates
-    final String overview = 'Starting threat intelligence profile for IP address ${report.ipAddress}. '
+    final String overview =
+        'Starting threat intelligence profile for IP address ${report.ipAddress}. '
         'This network resource is managed by the Internet Service Provider ${report.isp} in ${report.countryName}. '
         'It has triggered an abuse confidence score of ${report.abuseConfidenceScore} percent out of a total of ${report.totalReports} reports.';
 
@@ -338,20 +347,18 @@ class TrackIpProvider extends ChangeNotifier {
           : countryCode;
       regions.add({
         'countryCode': countryCode,
-        'narration': 'Analyzing traffic vector from ${report.ipAddress} targeting $countryName. '
+        'narration':
+            'Analyzing traffic vector from ${report.ipAddress} targeting $countryName. '
             'We have registered ${list.length} distinct reports in this region. '
             'Reporters cited categories such as ${list.first.categoryNames.join(", ")}.',
       });
     });
 
-    final String conclusion = 'This concludes the visualization. The security Operations Center recommends '
+    final String conclusion =
+        'This concludes the visualization. The security Operations Center recommends '
         'applying access controls for target networks and blacklisting the suspect IP address ${report.ipAddress} to prevent further compromises.';
 
-    return {
-      'overview': overview,
-      'regions': regions,
-      'conclusion': conclusion,
-    };
+    return {'overview': overview, 'regions': regions, 'conclusion': conclusion};
   }
 
   /// Starts the 3D tour from the beginning
@@ -449,7 +456,10 @@ class TrackIpProvider extends ChangeNotifier {
   }
 
   /// Goes back to the previous step
-  void previousStep(TextToSpeechService ttsService, TrackIpLgService lgService) {
+  void previousStep(
+    TextToSpeechService ttsService,
+    TrackIpLgService lgService,
+  ) {
     if (!_isTourPlaying) return;
     _stopOrbitTimer();
     ttsService.onCompletion = null; // Temporarily disable callback
@@ -475,8 +485,12 @@ class TrackIpProvider extends ChangeNotifier {
   }
 
   /// Internal playback loop for the current active step
-  void _playCurrentStep(TextToSpeechService ttsService, TrackIpLgService lgService) async {
-    if (_currentTourStepIndex < 0 || _currentTourStepIndex >= _tourSteps.length) {
+  void _playCurrentStep(
+    TextToSpeechService ttsService,
+    TrackIpLgService lgService,
+  ) async {
+    if (_currentTourStepIndex < 0 ||
+        _currentTourStepIndex >= _tourSteps.length) {
       return;
     }
 
@@ -488,7 +502,7 @@ class TrackIpProvider extends ChangeNotifier {
     final String narration = step['narration'];
 
     _currentHeading = 0.0;
-    
+
     // 1. Zoom and fly camera to target location
     await lgService.flyToCoordinate(
       latitude: lat,
@@ -502,7 +516,10 @@ class TrackIpProvider extends ChangeNotifier {
     _startOrbitTimer(lgService, lat, lon, range, tilt);
 
     // 3. Play voice description
-    await ttsService.speak(narration, utteranceId: 'step_$_currentTourStepIndex');
+    await ttsService.speak(
+      narration,
+      utteranceId: 'step_$_currentTourStepIndex',
+    );
   }
 
   void _startOrbitTimer(

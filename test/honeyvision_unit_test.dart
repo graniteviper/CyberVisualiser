@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cyber_visualiser/models/attack_event.dart';
 import 'package:cyber_visualiser/services/honeylabs_service.dart';
@@ -22,6 +23,7 @@ class StubHoneyLabsService extends HoneyLabsService {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('CountryCoordinatesLookup Tests', () {
     test('Should return correct coordinates for valid country code', () {
       final us = CountryCoordinatesLookup.getCoordinate('US');
@@ -133,15 +135,15 @@ void main() {
     });
   });
 
-  group('AppConfig API Keys and Fallback Tests', () {
-    test('Should fall back to env key if user key is empty', () {
+  group('AppConfig API Keys Tests', () {
+    test('Should return user key directly and not fall back to env key', () {
       AppConfig.envApiKey = 'env-hl-key';
       AppConfig.envAbuseIpDbApiKey = 'env-abuse-key';
       AppConfig.userApiKey = '';
       AppConfig.userAbuseIpDbApiKey = '';
 
-      expect(AppConfig.apiKey, 'env-hl-key');
-      expect(AppConfig.abuseIpDbApiKey, 'env-abuse-key');
+      expect(AppConfig.apiKey, '');
+      expect(AppConfig.abuseIpDbApiKey, '');
     });
 
     test('Should prioritize user custom keys if provided', () {
@@ -154,8 +156,25 @@ void main() {
       expect(AppConfig.abuseIpDbApiKey, 'custom-abuse-key');
     });
 
-    test('Should save user keys to preferences and update fields', () async {
-      SharedPreferences.setMockInitialValues({});
+    test('Should save user keys to secure storage and update fields', () async {
+      const channel = MethodChannel(
+        'plugins.it_nomads.com/flutter_secure_storage',
+      );
+      final Map<String, String> mockSecureValues = {};
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+            if (methodCall.method == 'write') {
+              final key = methodCall.arguments['key'] as String;
+              final value = methodCall.arguments['value'] as String;
+              mockSecureValues[key] = value;
+              return null;
+            }
+            if (methodCall.method == 'read') {
+              final key = methodCall.arguments['key'] as String;
+              return mockSecureValues[key];
+            }
+            return null;
+          });
 
       await AppConfig.saveUserKeys(
         'new-user-hl-key',
@@ -170,11 +189,10 @@ void main() {
       expect(AppConfig.abuseIpDbApiKey, 'new-user-abuse-key');
       expect(AppConfig.geminiApiKey, 'new-user-gemini-key');
 
-      // Verify stored keys in mock prefs
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('user_honeylabs_api_key'), 'new-user-hl-key');
-      expect(prefs.getString('user_abuseipdb_api_key'), 'new-user-abuse-key');
-      expect(prefs.getString('user_gemini_api_key'), 'new-user-gemini-key');
+      // Verify stored keys in secure mock
+      expect(mockSecureValues['user_honeylabs_api_key'], 'new-user-hl-key');
+      expect(mockSecureValues['user_abuseipdb_api_key'], 'new-user-abuse-key');
+      expect(mockSecureValues['user_gemini_api_key'], 'new-user-gemini-key');
     });
   });
 

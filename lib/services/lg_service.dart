@@ -215,12 +215,13 @@ class ActiveAttack {
 }
 
 class LgService extends ChangeNotifier {
-  LgService._internal();
+  @visibleForTesting
+  LgService.internal();
 
-  // Private constructor (_), only accessible from within the class
-  // Prevents creating multiple instances from outside the class
+  // Constructor accessible for testing subclasses
+  // Prevents creating multiple instances from outside the class except for testing
 
-  static final LgService _singleton = LgService._internal();
+  static final LgService _singleton = LgService.internal();
   // This line creates and stores the single instance of the LgService class under the name "_singleton"
   // 'static' means it belongs to the class itself, NOT to an object
   // 'final' means it cannot be reassigned after being initialized

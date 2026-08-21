@@ -31,7 +31,7 @@ class DummyGeminiService extends GeminiService {
 
 class DummyTrackIpLgService extends TrackIpLgService {
   List<Map<String, dynamic>> flyHistory = [];
-  
+
   DummyTrackIpLgService() : super(LgService());
 
   @override
@@ -52,7 +52,8 @@ class DummyTrackIpLgService extends TrackIpLgService {
   }
 }
 
-class DummyTextToSpeechService extends ChangeNotifier implements TextToSpeechService {
+class DummyTextToSpeechService extends ChangeNotifier
+    implements TextToSpeechService {
   @override
   VoidCallback? onCompletion;
 
@@ -61,7 +62,7 @@ class DummyTextToSpeechService extends ChangeNotifier implements TextToSpeechSer
 
   bool isSpeakingStatus = false;
   String lastSpokenText = '';
-  
+
   @override
   bool get isSpeaking => isSpeakingStatus;
 
@@ -110,36 +111,47 @@ void main() {
   });
 
   group('IP Tracker 3D Tour Tests', () {
-    test('Should build fallback script correctly if Gemini API fails or returns malformed response', () async {
-      final repository = DummyTrackIpRepository(mockReport);
-      final provider = TrackIpProvider(repository);
-      final gemini = DummyGeminiService('INVALID_NON_JSON_RESPONSE');
+    test(
+      'Should build fallback script correctly if Gemini API fails or returns malformed response',
+      () async {
+        final repository = DummyTrackIpRepository(mockReport);
+        final provider = TrackIpProvider(repository);
+        final gemini = DummyGeminiService('INVALID_NON_JSON_RESPONSE');
 
-      // Fetch IP details to load the report
-      await provider.fetchIpDetails(ipAddress: '8.8.8.8', maxAgeInDays: 5);
-      
-      // Generate tour
-      await provider.generateTour(gemini);
-      
-      expect(provider.tourSteps.length, 3); // Origin + 1 Reporter + Conclusion
-      expect(provider.tourError, isNull);
-      
-      // origin step
-      expect(provider.tourSteps[0]['title'], 'Threat Origin Overview');
-      expect(provider.tourSteps[0]['narration'], contains('Starting threat intelligence profile'));
-      
-      // reporter step
-      expect(provider.tourSteps[1]['title'], contains('Reporter: Germany'));
-      
-      // conclusion step
-      expect(provider.tourSteps[2]['title'], 'Threat Analysis Conclusion');
-    });
+        // Fetch IP details to load the report
+        await provider.fetchIpDetails(ipAddress: '8.8.8.8', maxAgeInDays: 5);
 
-    test('Should parse correct steps from clean Gemini JSON response', () async {
-      final repository = DummyTrackIpRepository(mockReport);
-      final provider = TrackIpProvider(repository);
-      
-      const cleanJsonResponse = '''
+        // Generate tour
+        await provider.generateTour(gemini);
+
+        expect(
+          provider.tourSteps.length,
+          3,
+        ); // Origin + 1 Reporter + Conclusion
+        expect(provider.tourError, isNull);
+
+        // origin step
+        expect(provider.tourSteps[0]['title'], 'Threat Origin Overview');
+        expect(
+          provider.tourSteps[0]['narration'],
+          contains('Starting threat intelligence profile'),
+        );
+
+        // reporter step
+        expect(provider.tourSteps[1]['title'], contains('Reporter: Germany'));
+
+        // conclusion step
+        expect(provider.tourSteps[2]['title'], 'Threat Analysis Conclusion');
+      },
+    );
+
+    test(
+      'Should parse correct steps from clean Gemini JSON response',
+      () async {
+        final repository = DummyTrackIpRepository(mockReport);
+        final provider = TrackIpProvider(repository);
+
+        const cleanJsonResponse = '''
 {
   "overview": "This is a custom AI overview.",
   "regions": [
@@ -151,24 +163,36 @@ void main() {
   "conclusion": "This is a custom AI conclusion."
 }
 ''';
-      final gemini = DummyGeminiService(cleanJsonResponse);
+        final gemini = DummyGeminiService(cleanJsonResponse);
 
-      await provider.fetchIpDetails(ipAddress: '8.8.8.8', maxAgeInDays: 5);
-      await provider.generateTour(gemini);
-      
-      expect(provider.tourSteps.length, 3);
-      expect(provider.tourSteps[0]['narration'], 'This is a custom AI overview.');
-      expect(provider.tourSteps[1]['narration'], 'This is Germany custom threat description.');
-      expect(provider.tourSteps[2]['narration'], 'This is a custom AI conclusion.');
-    });
+        await provider.fetchIpDetails(ipAddress: '8.8.8.8', maxAgeInDays: 5);
+        await provider.generateTour(gemini);
 
-    test('Should execute play, pause, next, skip correctly updating speaker and camera', () async {
-      final repository = DummyTrackIpRepository(mockReport);
-      final provider = TrackIpProvider(repository);
-      final tts = DummyTextToSpeechService();
-      final trackLg = DummyTrackIpLgService();
-      
-      const response = '''
+        expect(provider.tourSteps.length, 3);
+        expect(
+          provider.tourSteps[0]['narration'],
+          'This is a custom AI overview.',
+        );
+        expect(
+          provider.tourSteps[1]['narration'],
+          'This is Germany custom threat description.',
+        );
+        expect(
+          provider.tourSteps[2]['narration'],
+          'This is a custom AI conclusion.',
+        );
+      },
+    );
+
+    test(
+      'Should execute play, pause, next, skip correctly updating speaker and camera',
+      () async {
+        final repository = DummyTrackIpRepository(mockReport);
+        final provider = TrackIpProvider(repository);
+        final tts = DummyTextToSpeechService();
+        final trackLg = DummyTrackIpLgService();
+
+        const response = '''
 {
   "overview": "Overview script.",
   "regions": [
@@ -180,48 +204,49 @@ void main() {
   "conclusion": "Conclusion script."
 }
 ''';
-      final gemini = DummyGeminiService(response);
+        final gemini = DummyGeminiService(response);
 
-      await provider.fetchIpDetails(ipAddress: '8.8.8.8', maxAgeInDays: 5);
-      await provider.generateTour(gemini);
+        await provider.fetchIpDetails(ipAddress: '8.8.8.8', maxAgeInDays: 5);
+        await provider.generateTour(gemini);
 
-      // Start Tour
-      provider.startTour(tts, trackLg);
-      await Future.delayed(Duration.zero);
-      expect(provider.isTourPlaying, isTrue);
-      expect(provider.isTourPaused, isFalse);
-      expect(provider.currentTourStepIndex, 0);
-      expect(tts.lastSpokenText, 'Overview script.');
-      expect(trackLg.flyHistory.length, 1);
+        // Start Tour
+        provider.startTour(tts, trackLg);
+        await Future.delayed(Duration.zero);
+        expect(provider.isTourPlaying, isTrue);
+        expect(provider.isTourPaused, isFalse);
+        expect(provider.currentTourStepIndex, 0);
+        expect(tts.lastSpokenText, 'Overview script.');
+        expect(trackLg.flyHistory.length, 1);
 
-      // Go to Next Step
-      provider.nextStep(tts, trackLg);
-      await Future.delayed(Duration.zero);
-      expect(provider.currentTourStepIndex, 1);
-      expect(tts.lastSpokenText, 'Germany script.');
-      expect(trackLg.flyHistory.length, 2);
+        // Go to Next Step
+        provider.nextStep(tts, trackLg);
+        await Future.delayed(Duration.zero);
+        expect(provider.currentTourStepIndex, 1);
+        expect(tts.lastSpokenText, 'Germany script.');
+        expect(trackLg.flyHistory.length, 2);
 
-      // Pause Tour
-      provider.pauseTour(tts);
-      expect(provider.isTourPaused, isTrue);
-      expect(tts.isSpeaking, isFalse);
+        // Pause Tour
+        provider.pauseTour(tts);
+        expect(provider.isTourPaused, isTrue);
+        expect(tts.isSpeaking, isFalse);
 
-      // Resume Tour
-      provider.resumeTour(tts, trackLg);
-      await Future.delayed(Duration.zero);
-      expect(provider.isTourPaused, isFalse);
-      expect(tts.lastSpokenText, 'Germany script.');
+        // Resume Tour
+        provider.resumeTour(tts, trackLg);
+        await Future.delayed(Duration.zero);
+        expect(provider.isTourPaused, isFalse);
+        expect(tts.lastSpokenText, 'Germany script.');
 
-      // Previous Step
-      provider.previousStep(tts, trackLg);
-      await Future.delayed(Duration.zero);
-      expect(provider.currentTourStepIndex, 0);
-      expect(tts.lastSpokenText, 'Overview script.');
+        // Previous Step
+        provider.previousStep(tts, trackLg);
+        await Future.delayed(Duration.zero);
+        expect(provider.currentTourStepIndex, 0);
+        expect(tts.lastSpokenText, 'Overview script.');
 
-      // Stop Tour
-      provider.stopTour(tts);
-      expect(provider.isTourPlaying, isFalse);
-      expect(tts.isSpeaking, isFalse);
-    });
+        // Stop Tour
+        provider.stopTour(tts);
+        expect(provider.isTourPlaying, isFalse);
+        expect(tts.isSpeaking, isFalse);
+      },
+    );
   });
 }

@@ -67,14 +67,25 @@ class _TrackIpPageState extends State<TrackIpPage>
     return null;
   }
 
-  void _submitSearch(TrackIpProvider provider, TrackIpLgService lgService) {
+  void _submitSearch(
+    TrackIpProvider provider,
+    TrackIpLgService lgService,
+  ) async {
     if (_formKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
-      provider.fetchIpDetails(
+      await provider.fetchIpDetails(
         ipAddress: _ipController.text.trim(),
         maxAgeInDays: _maxAgeInDays.toInt(),
         lgService: lgService,
       );
+      if (provider.errorMessage != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('IP Lookup Failed: ${provider.errorMessage}'),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+      }
     }
   }
 
@@ -100,6 +111,18 @@ class _TrackIpPageState extends State<TrackIpPage>
           geminiService: geminiService,
           lgService: lgService,
         );
+      }
+
+      if (mounted) {
+        final err = provider.geminiError ?? provider.errorMessage;
+        if (err != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gemini Analysis Failed: $err'),
+              backgroundColor: Colors.red.shade800,
+            ),
+          );
+        }
       }
 
       if (!mounted) return;
@@ -1073,7 +1096,9 @@ class _TrackIpPageState extends State<TrackIpPage>
     bool isDark,
   ) {
     final ttsService = context.watch<TextToSpeechService>();
-    final activeColor = isDark ? const Color(0xFF00E5FF) : const Color(0xFF3B82F6);
+    final activeColor = isDark
+        ? const Color(0xFF00E5FF)
+        : const Color(0xFF3B82F6);
     final cardBg = isDark ? const Color(0xFF0D1124) : Colors.white;
     final borderColor = isDark ? const Color(0xFF1F294D) : Colors.grey.shade200;
 
@@ -1083,7 +1108,9 @@ class _TrackIpPageState extends State<TrackIpPage>
         color: cardBg,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: provider.isTourPlaying ? activeColor.withOpacity(0.5) : borderColor,
+          color: provider.isTourPlaying
+              ? activeColor.withOpacity(0.5)
+              : borderColor,
           width: 1.5,
         ),
         boxShadow: [
@@ -1107,7 +1134,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                 decoration: BoxDecoration(
                   color: provider.isTourPlaying
                       ? activeColor.withOpacity(0.12)
-                      : (isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100),
+                      : (isDark
+                            ? Colors.blueGrey.shade900
+                            : Colors.grey.shade100),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -1126,7 +1155,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
-                        color: provider.isTourPlaying ? activeColor : (isDark ? Colors.white70 : Colors.black87),
+                        color: provider.isTourPlaying
+                            ? activeColor
+                            : (isDark ? Colors.white70 : Colors.black87),
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -1135,7 +1166,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                         'Step ${provider.currentTourStepIndex + 1} of ${provider.tourSteps.length}: ${provider.tourSteps[provider.currentTourStepIndex]['title']}',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
                           fontWeight: FontWeight.w500,
                         ),
                       )
@@ -1144,7 +1177,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                         'Narrated Liquid Galaxy Tour',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+                          color: isDark
+                              ? Colors.grey.shade500
+                              : Colors.grey.shade500,
                         ),
                       ),
                   ],
@@ -1158,12 +1193,16 @@ class _TrackIpPageState extends State<TrackIpPage>
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: provider.isTourPaused ? Colors.amber : Colors.redAccent,
+                        color: provider.isTourPaused
+                            ? Colors.amber
+                            : Colors.redAccent,
                         shape: BoxShape.circle,
                         boxShadow: [
                           if (!provider.isTourPaused)
                             BoxShadow(
-                              color: Colors.redAccent.withOpacity(0.6 * _pulseController.value),
+                              color: Colors.redAccent.withOpacity(
+                                0.6 * _pulseController.value,
+                              ),
                               blurRadius: 6 * _pulseController.value,
                               spreadRadius: 1 * _pulseController.value,
                             ),
@@ -1178,7 +1217,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
-                    color: provider.isTourPaused ? Colors.amber : Colors.redAccent,
+                    color: provider.isTourPaused
+                        ? Colors.amber
+                        : Colors.redAccent,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -1203,7 +1244,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                       'Gemini is scripting your 3D tour narration...',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        color: isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1211,7 +1254,6 @@ class _TrackIpPageState extends State<TrackIpPage>
                 ),
               ),
             )
-
           // Script Not Generated Yet State
           else if (provider.tourSteps.isEmpty) ...[
             Text(
@@ -1229,13 +1271,17 @@ class _TrackIpPageState extends State<TrackIpPage>
               style: ElevatedButton.styleFrom(
                 backgroundColor: activeColor.withOpacity(0.12),
                 foregroundColor: activeColor,
-                side: BorderSide(color: activeColor.withOpacity(0.3), width: 1.2),
+                side: BorderSide(
+                  color: activeColor.withOpacity(0.3),
+                  width: 1.2,
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              onPressed: () => provider.generateTour(context.read<GeminiService>()),
+              onPressed: () =>
+                  provider.generateTour(context.read<GeminiService>()),
               icon: const Icon(Icons.auto_awesome, size: 18),
               label: const Text(
                 'Generate 3D Audio Tour',
@@ -1243,28 +1289,37 @@ class _TrackIpPageState extends State<TrackIpPage>
               ),
             ),
           ]
-
           // Tour Ready (Not Playing) State
           else if (!provider.isTourPlaying) ...[
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF141A33) : Colors.blue.shade50.withOpacity(0.3),
+                color: isDark
+                    ? const Color(0xFF141A33)
+                    : Colors.blue.shade50.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF232D5C) : Colors.blue.shade100,
+                  color: isDark
+                      ? const Color(0xFF232D5C)
+                      : Colors.blue.shade100,
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle_outline_rounded, color: activeColor, size: 20),
+                  Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: activeColor,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       '3D Tour script generated successfully with ${provider.tourSteps.length} stops.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.grey.shade300 : Colors.blue.shade900,
+                        color: isDark
+                            ? Colors.grey.shade300
+                            : Colors.blue.shade900,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1285,11 +1340,15 @@ class _TrackIpPageState extends State<TrackIpPage>
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    onPressed: () => provider.startTour(ttsService, trackLgService),
+                    onPressed: () =>
+                        provider.startTour(ttsService, trackLgService),
                     icon: const Icon(Icons.play_arrow_rounded, size: 22),
                     label: const Text(
                       'Start 3D Tour',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -1306,20 +1365,24 @@ class _TrackIpPageState extends State<TrackIpPage>
                   ),
                   icon: const Icon(Icons.refresh, size: 20),
                   tooltip: 'Regenerate Tour',
-                  onPressed: () => provider.generateTour(context.read<GeminiService>()),
+                  onPressed: () =>
+                      provider.generateTour(context.read<GeminiService>()),
                 ),
               ],
             ),
           ]
-
           // Active Tour Player
           else ...[
             // Progress Bar
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: (provider.currentTourStepIndex + 1) / provider.tourSteps.length,
-                backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade200,
+                value:
+                    (provider.currentTourStepIndex + 1) /
+                    provider.tourSteps.length,
+                backgroundColor: isDark
+                    ? Colors.blueGrey.shade900
+                    : Colors.grey.shade200,
                 valueColor: AlwaysStoppedAnimation<Color>(activeColor),
                 minHeight: 5,
               ),
@@ -1334,7 +1397,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                 color: isDark ? const Color(0xFF13172E) : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF1E264D) : Colors.grey.shade200,
+                  color: isDark
+                      ? const Color(0xFF1E264D)
+                      : Colors.grey.shade200,
                 ),
               ),
               child: Column(
@@ -1348,7 +1413,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
                           letterSpacing: 1.0,
                         ),
                       ),
@@ -1371,7 +1438,8 @@ class _TrackIpPageState extends State<TrackIpPage>
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    provider.tourSteps[provider.currentTourStepIndex]['narration'],
+                    provider.tourSteps[provider
+                        .currentTourStepIndex]['narration'],
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.5,
@@ -1391,7 +1459,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                 // Back
                 IconButton.filled(
                   style: IconButton.styleFrom(
-                    backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100,
+                    backgroundColor: isDark
+                        ? Colors.blueGrey.shade900
+                        : Colors.grey.shade100,
                     foregroundColor: isDark ? Colors.white70 : Colors.black87,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -1434,7 +1504,9 @@ class _TrackIpPageState extends State<TrackIpPage>
                 // Next
                 IconButton.filled(
                   style: IconButton.styleFrom(
-                    backgroundColor: isDark ? Colors.blueGrey.shade900 : Colors.grey.shade100,
+                    backgroundColor: isDark
+                        ? Colors.blueGrey.shade900
+                        : Colors.grey.shade100,
                     foregroundColor: isDark ? Colors.white70 : Colors.black87,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -1442,12 +1514,14 @@ class _TrackIpPageState extends State<TrackIpPage>
                     padding: const EdgeInsets.all(12),
                   ),
                   icon: Icon(
-                    provider.currentTourStepIndex == provider.tourSteps.length - 1
+                    provider.currentTourStepIndex ==
+                            provider.tourSteps.length - 1
                         ? Icons.check_rounded
                         : Icons.skip_next_rounded,
                     size: 20,
                   ),
-                  onPressed: () => provider.nextStep(ttsService, trackLgService),
+                  onPressed: () =>
+                      provider.nextStep(ttsService, trackLgService),
                 ),
                 const SizedBox(width: 24),
 
